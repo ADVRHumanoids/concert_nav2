@@ -8,6 +8,7 @@ Ensure you have the following installed:
 
 - **Docker and Docker Compose**:
     - To install, follow the appropriate instructions for [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) on Ubuntu.
+
 ## Setup and Docker Build
 
 1. **Build the Docker Image**:
@@ -21,6 +22,12 @@ Ensure you have the following installed:
     ```
 
 ## Launching Concert in Gazebo
+
+Before launching the Concert robot model, set the required environment variable to specify the resource path for Gazebo:
+
+```bash
+export GZ_SIM_RESOURCE_PATH=/home/user/data/forest_ws/ros_src/concert_description/concert_gazebo/models
+```
 
 To launch the Concert robot model in the default Gazebo world, execute the following command:
 
