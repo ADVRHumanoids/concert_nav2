@@ -1,4 +1,3 @@
-```markdown
 ## Launching Concert in Gazebo
 
 To launch the Concert robot model in the default Gazebo world, execute the following command:
