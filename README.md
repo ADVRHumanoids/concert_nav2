@@ -83,3 +83,37 @@ For autonomous navigation while building a map simultaneously, use the SLAM Tool
     ```bash
     ros2 launch concert_navigation path_planner.launch.py
     ```
+
+## 3D Mapping with RTAB-Map
+
+For 3D mapping, Concert uses RTAB-Map, which allows real-time 3D mapping and localization. Since Concert has two 3D PointCloud sensors, you will also need to fuse their data.
+
+1. **Fuse the 3D PointClouds**:
+    To fuse the data from the two 3D PointCloud sensors, use the following command:
+    ```bash
+    ros2 launch concert_navigation master_cloud_multi_merger.launch.py
+    ```
+2. **Launch RTAB-Map for 3D Mapping**:
+    Use the following command to start the RTAB-Map process:
+    ```bash
+    ros2 launch concert_mapping rtab_vlp16.launch.py
+    ```
+### Saving PointClouds as `.pcd` Files
+
+To save the fused PointCloud data into `.pcd` files for later use:
+
+```bash
+ros2 launch concert_mapping pointcloud_to_pcd_launch.py
+```
+
+The resulting `.pcd` files will be stored in the specified directory `concert_mapping/pointclouds/`.
+
+### Replacing the PointCloud with Saved `.pcd` Data
+
+To load the saved `.pcd` file and use it as the PointCloud source:
+
+```bash
+ros2 launch concert_mapping pcd_to_pointcloud.launch.py
+```
+
+This replaces the live sensor data with the pre-saved PointCloud data, enabling operations using previously captured environments.
