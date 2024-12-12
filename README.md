@@ -1,3 +1,25 @@
+# Concert Robot Workspace
+
+This repository provides the necessary setup, scripts, and commands to launch and operate the **Concert** robot in a simulated environment. The setup includes **Gazebo** simulation, **SLAM**, and **Navigation** in **ROS 2** (Robot Operating System 2). Below are detailed instructions for building the Docker image, launching the robot, enabling navigation, running SLAM, saving/loading maps, and following waypoints.
+
+## Prerequisites
+
+Ensure you have the following installed:
+
+- **Docker and Docker Compose**:
+    - To install, follow the appropriate instructions for [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) on Ubuntu.
+## Setup and Docker Build
+
+1. **Build the Docker Image**:
+    ```bash
+    docker-compose build
+    ```
+
+2. **Run the Docker Container**:
+    ```bash
+    docker-compose up -d
+    ```
+
 ## Launching Concert in Gazebo
 
 To launch the Concert robot model in the default Gazebo world, execute the following command:
