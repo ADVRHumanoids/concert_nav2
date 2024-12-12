@@ -40,12 +40,6 @@ To start mapping the environment using the SLAM Toolbox and automatically save t
 ros2 launch concert_nav2 master_mapping_slam_saver.launch.py
 ```
 
-Alternatively, you can map the environment and navigate autonomously at the same time using SLAM Toolbox's localization feature. This enables the robot to map while localizing itself in the environment:
-
-```bash
-ros2 launch concert_nav2 slam_toolbox_navigation.launch.py
-```
-
 ### Saving the Map
 
 Once you've completed mapping, save the generated map using the `nav2_map_server` package:
@@ -80,7 +74,7 @@ For autonomous navigation while building a map simultaneously, use the SLAM Tool
 
 1. **Start SLAM Toolbox with Navigation Enabled**:
     ```bash
-    ros2 launch concert_nav2 slam_toolbox_navigation.launch.py
+    ros2 launch concert_nav2 master_mapping_slam_saver.launch.py
     ```
 
 2. **Activate the Navigation Stack**:
