@@ -1,0 +1,27 @@
+services:
+  dev:
+    build: 
+      context: .   # This is the path where Docker Compose will look for the Dockerfile
+    privileged: true
+    network_mode: host
+    stdin_open: true
+    tty: true
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    restart: always
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+      - ~/.ssh:/home/user/.ssh  # ssh
+      - ${PWD}/data:/home/user/data:rw
+    environment:
+      - TERM=xterm-256color
+      - DISPLAY
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: bash
