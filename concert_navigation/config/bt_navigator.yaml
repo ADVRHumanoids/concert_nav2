@@ -6,8 +6,8 @@ bt_navigator:
     odom_topic: /base_link/odom
     bt_loop_duration: 10
     #transform_tolerance: 0.1
-    default_nav_to_pose_bt_xml: "package://concert_navigation/behavior_tree/behavior.xml"
-    default_nav_through_poses_bt_xml: "package://concert_navigation/behavior_tree/behavior.xml"
+    default_nav_to_pose_bt_xml: $(ros2 pkg prefix --share concert_navigation)/behavior_tree/behavior.xml
+    default_nav_through_poses_bt_xml: $(ros2 pkg prefix --share concert_navigation)/behavior_tree/behavior.xml
     #always_reload_bt_xml: false
     #goal_blackboard_id: goal
     #goals_blackboard_id: goals
