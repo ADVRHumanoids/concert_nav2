@@ -132,7 +132,7 @@ For 3D mapping, Concert uses RTAB-Map, which allows real-time 3D mapping and loc
 To save the fused PointCloud data into `.pcd` files for later use:
 
 ```bash
-ros2 launch concert_mapping pointcloud_to_pcd_launch.py
+ros2 launch concert_mapping pointcloud_to_pcd.launch.py
 ```
 
 The resulting `.pcd` files will be stored in the specified directory `concert_mapping/pointclouds/`.
