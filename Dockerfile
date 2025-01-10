@@ -1,5 +1,8 @@
 FROM hhcmhub/xbot2-noble-dev:latest
 
+# Switch to root to install additional ROS packages
+USER root
+
 # Install additional ROS packages and utilities
 RUN apt-get update && apt-get install -y \
     ros-$ROS_DISTRO-xacro \
@@ -7,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     ros-$ROS_DISTRO-slam-toolbox \
     ros-$ROS_DISTRO-nav2* \
     ros-$ROS_DISTRO-cartographer* \
-    && sudo apt-get clean
+    && apt-get clean
 
-# Default command to run when starting the container
+# Switch back to user
+USER user
 CMD ["bash"]
