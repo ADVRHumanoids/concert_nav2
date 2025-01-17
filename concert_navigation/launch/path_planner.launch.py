@@ -14,9 +14,11 @@ def generate_launch_description():
     local_costmap_yaml = os.path.join(get_package_share_directory('concert_navigation'), 'config', 'local_costmap.yaml')
     velocity_smoother_yaml = os.path.join(get_package_share_directory('concert_navigation'), 'config', 'velocity_smoother.yaml')
     collision_monitor_yaml = os.path.join(get_package_share_directory('concert_navigation'), 'config', 'collision_monitor.yaml')
-
+    behavior_tree_path = os.path.join(get_package_share_directory('concert_navigation'), 'behavior_tree', 'behavior.xml')
     # Define remappings for tf topics
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
+
+
 
     # Define the launch description with the essential nodes and plugins
     return LaunchDescription([
@@ -56,7 +58,12 @@ def generate_launch_description():
             executable='bt_navigator',
             name='bt_navigator',
             output='screen',
-            parameters=[bt_navigator_yaml, global_costmap_yaml, local_costmap_yaml],
+            parameters=[bt_navigator_yaml,
+            {  # Override specific parameters
+                'default_nav_to_pose_bt_xml': behavior_tree_path,
+                'default_nav_through_poses_bt_xml': behavior_tree_path,
+            },
+            global_costmap_yaml, local_costmap_yaml],
             remappings=remappings
         ),
 
