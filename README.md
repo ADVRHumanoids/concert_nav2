@@ -8,8 +8,11 @@ Terminal window #2
 ```bash
 xbot2-core --hw ec_imp -V
 ```
-# Concert GUI Real Robot
+# Concert GUI Real Robot on Vsion Board
 Terminal window #3
+```bash
+ssh_vsion
+```
 ```bash
 cd ~/data/forest_ws/src/concert_config/config/xbot2_gui_server
 ```
