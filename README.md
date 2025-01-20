@@ -14,6 +14,9 @@ Terminal window #3
 ssh_vsion
 ```
 ```bash
+ros2
+```
+```bash
 cd ~/data/forest_ws/src/concert_config/config/xbot2_gui_server
 ```
 ```bash
