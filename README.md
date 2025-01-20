@@ -1,3 +1,19 @@
+# Concert GUI Real Robot
+Terminal window #1
+```bash
+reset && ecat_master
+```
+Terminal window #2
+```bash
+xbot2-core --hw ec_imp -V
+```
+Terminal window #3
+```bash
+cd ~/data/forest_ws/src/concert_config/config/xbot2_gui_server
+```
+```bash
+xbot2_gui_server concert_gui_config.yaml
+```
 # Concert Robot Workspace
 
 This repository provides the necessary setup, scripts, and commands to launch and operate the **Concert** robot in a simulated environment. The setup includes **Gazebo** simulation, **SLAM**, and **Navigation** in **ROS 2** (Robot Operating System 2). Below are detailed instructions for building the Docker image, launching the robot, enabling navigation, running SLAM, saving/loading maps, and following waypoints.
