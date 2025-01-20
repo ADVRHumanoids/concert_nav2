@@ -136,6 +136,10 @@ For autonomous navigation while building a map simultaneously, use the SLAM Tool
     ```bash
     ros2 launch concert_navigation path_planner.launch.py
     ```
+## Aborting Goal CLI
+```bash
+ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose "{}"
+```
 
 ## 3D Mapping with RTAB-Map
 
