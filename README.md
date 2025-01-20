@@ -1,12 +1,14 @@
-# Concert GUI Real Robot
+# Launch Ethercat Mster to communicate with the board on the Real Robot
 Terminal window #1
 ```bash
 reset && ecat_master
 ```
+# Launch xbot2 on the Real Robot
 Terminal window #2
 ```bash
 xbot2-core --hw ec_imp -V
 ```
+# Concert GUI Real Robot
 Terminal window #3
 ```bash
 cd ~/data/forest_ws/src/concert_config/config/xbot2_gui_server
