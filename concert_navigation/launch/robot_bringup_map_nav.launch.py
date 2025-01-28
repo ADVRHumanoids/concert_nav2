@@ -21,7 +21,8 @@ def generate_launch_description():
     # 2. Share directories
     odom_share_dir = get_package_share_directory('concert_odometry_ros2')
     navigation_share_dir = get_package_share_directory('concert_navigation')
-  
+    perception_share_dir = get_package_share_directory('perception_utils_ros2')
+
     # 3. Always launch odometry
     odom_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -32,7 +33,7 @@ def generate_launch_description():
     # 4. Always launch lidar / point cloud
     lidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(navigation_share_dir, 'launch', 'master_lidar_conversion_fuse.launch.py')
+            os.path.join(perception_share_dir, 'launch', 'master_lidar_conversion_fuse.launch.py')
         )
     )
 
