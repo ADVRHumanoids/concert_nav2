@@ -25,6 +25,7 @@ def generate_launch_description():
     odom_share_dir = get_package_share_directory('concert_odometry_ros2')
     navigation_share_dir = get_package_share_directory('concert_navigation')
     localization_share_dir = get_package_share_directory('concert_localization')
+    perception_share_dir = get_package_share_directory('perception_utils_ros2')
 
     # Launch odometry
     odom_launch = IncludeLaunchDescription(
@@ -36,7 +37,7 @@ def generate_launch_description():
     # Launch lidar
     lidar_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(navigation_share_dir, 'launch', 'master_lidar_conversion_fuse.launch.py')
+            os.path.join(perception_share_dir, 'launch', 'master_lidar_conversion_fuse.launch.py')
         )
     )
 
