@@ -12,7 +12,7 @@ def generate_launch_description():
     )
     # Include the mux launch file
     mux_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(get_package_share_directory("ira_laser_tools"), 'launch','laserscan_multi_merger.launch.py'))
+        PythonLaunchDescriptionSource(os.path.join(get_package_share_directory("perception_utils_ros2"), 'launch','laserscan_multi_merger.launch.py'))
     )
 
     return LaunchDescription([
