@@ -12,7 +12,7 @@
           </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{path}" controller_id="FollowPath"/>
+          <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="general_goal_checker"/>
           <ReactiveFallback name="FollowPathRecoveryFallback">
             <GoalUpdated/>
             <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
@@ -27,8 +27,9 @@
             <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
           </Sequence>
           <Spin spin_dist="1.57"/>
-          <Wait wait_duration="5"/>
-          <BackUp backup_dist="0.15" backup_speed="0.025"/>
+          <Wait wait_duration="3"/>
+          <BackUp backup_dist="0.30" backup_speed="0.10"/>
+          <Spin spin_dist="-1.57"/>
         </RoundRobin>
       </ReactiveFallback>
     </RecoveryNode>
