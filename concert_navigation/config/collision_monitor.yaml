@@ -9,9 +9,17 @@ collision_monitor:
     source_timeout: 1.0
     base_shift_correction: True
     stop_pub_timeout: 2.0
-    # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
-    # and robot footprint for "approach" action type.
-    polygons: ["FootprintApproach"]
+    # Layered safety: slowdown → approach (footprint-aware time-to-collision)
+    polygons: ["PolygonSlow", "FootprintApproach"]
+    PolygonSlow:
+      type: "polygon"
+      points: "[[0.85, 0.55], [0.85, -0.55], [-0.85, -0.55], [-0.85, 0.55]]"
+      action_type: "slowdown"
+      min_points: 4
+      slowdown_ratio: 0.4              # 40% speed when obstacle in slow zone
+      visualize: True
+      polygon_pub_topic: "polygon_slow"
+      enabled: True
     FootprintApproach:
       type: "polygon"
       action_type: "approach"
@@ -24,7 +32,5 @@ collision_monitor:
     observation_sources: ["scan"]
     scan:
       type: "scan"
-      topic: "scan"
-      min_height: 0.15
-      max_height: 2.0
+      topic: "/scan"
       enabled: True

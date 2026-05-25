@@ -48,7 +48,7 @@ def generate_launch_description():
             {'use_sim_time': use_sim_time},  # Override with launch argument
             local_costmap_yaml
         ],
-        remappings=remappings + [('/cmd_vel', '/omnisteering/cmd_vel')]
+        remappings=remappings
     )
 
     planner_node = Node(
@@ -88,8 +88,6 @@ def generate_launch_description():
                 'default_nav_to_pose_bt_xml': behavior_tree_path,
                 'default_nav_through_poses_bt_xml': behavior_tree_path,
             },
-            global_costmap_yaml,
-            local_costmap_yaml
         ],
         remappings=remappings
     )
@@ -100,9 +98,10 @@ def generate_launch_description():
         name='velocity_smoother',
         output='screen',
         parameters=[
-            velocity_smoother_yaml
+            velocity_smoother_yaml,
+            {'use_sim_time': use_sim_time}
         ],
-        remappings=remappings + [('/cmd_vel', '/omnisteering/cmd_vel')]
+        remappings=remappings + [('smoothed_cmd_vel', 'cmd_vel_smoothed')]
     )
 
     collision_monitor_node = Node(
@@ -111,7 +110,8 @@ def generate_launch_description():
         name='collision_monitor',
         output='screen',
         parameters=[
-            collision_monitor_yaml
+            collision_monitor_yaml,
+            {'use_sim_time': use_sim_time}
         ],
         remappings=remappings
     )
@@ -122,7 +122,8 @@ def generate_launch_description():
         name='smoother_server',
         output='screen',
         parameters=[
-            smoother_server_yaml
+            smoother_server_yaml,
+            {'use_sim_time': use_sim_time}
         ],
         remappings=remappings
     )
@@ -134,6 +135,7 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {'autostart': True},
+            {'use_sim_time': use_sim_time},
             {'node_names': [
                 'planner_server',
                 'controller_server',
