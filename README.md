@@ -1,148 +1,274 @@
-# Concert Robot Workspace
+# Concert Nav2 Real Robot Bringup
 
-This repository provides the necessary setup, scripts, and commands to launch and operate the **Concert** robot in a simulated environment. The setup includes **Gazebo** simulation, **SLAM**, and **Navigation** in **ROS 2** (Robot Operating System 2). Below are detailed instructions for building the Docker image, launching the robot, enabling navigation, running SLAM, saving/loading maps, and following waypoints.
+This package is the real-robot Nav2 stack for Concert. It assumes the real
+XBot2/omnisteering stack is already running and that the robot exposes:
 
-## Prerequisites
+- `/omnisteering/cmd_vel` as `geometry_msgs/msg/Twist`
+- `/base_link/odom` as odometry
+- `/scan` as the fused 2D laser scan
+- TF frames `map`, `odom`, and `base_link`
 
-Ensure you have the following installed:
+The command chain is:
 
-- **Docker and Docker Compose**:
-    - To install, follow the appropriate instructions for [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) on Ubuntu.
-
-## Setup and Docker Build
-
-1. **Build the Docker Image**:
-    ```bash
-    docker-compose build
-    ```
-
-2. **Run the Docker Container**:
-    ```bash
-    docker-compose up -d
-    ```
-
-## Launching Concert in Gazebo
-
-Before launching the Concert robot model, set the required environment variable to specify the resource path for Gazebo:
-
-```bash
-export GZ_SIM_RESOURCE_PATH=/home/user/data/forest_ws/ros_src/concert_description/concert_gazebo/models
+```text
+Nav2 controller/recoveries -> cmd_vel_nav
+cmd_vel_nav -> velocity_smoother -> cmd_vel_smoothed
+cmd_vel_smoothed -> collision_monitor -> /omnisteering/cmd_vel
 ```
 
-To launch the Concert robot model in the default Gazebo world, execute the following command:
+Only `collision_monitor` should publish to `/omnisteering/cmd_vel`.
+
+## 0. Forest Grow And Source
+
+From the Forest workspace containing this package:
 
 ```bash
-ros2 launch concert_gazebo modular.launch.py velodyne:=true
+cd ~/data/forest_ws
+forest grow concert_nav2 --no-deps --force-reconfigure -j 4
+source install/setup.bash
+export USE_SIM_TIME=false
 ```
 
-This command launches the Concert robot in a simulated Gazebo environment with a Velodyne LiDAR sensor enabled.
-
-To open **RViz** for visualizing sensor data, the robot's position, and the environment in 3D, use the following command:
+If the Forest project name in your workspace is different, replace
+`concert_nav2` with that project name. For the larger Concert/XBot2 workspace,
+the usual build command is:
 
 ```bash
-rviz2 --ros-args -p use_sim_time:=true
+cd /home/user/xbot2_ws
+forest grow iit-concert-ros-pkg --no-deps --force-reconfigure -j 4
+source install/setup.bash
+export USE_SIM_TIME=false
 ```
 
-## Setting Up Odometry
+## 1. Start The Real Robot Base
 
-To start the odometry process, which helps the robot estimate its position and movement:
+Terminal 1, EtherCAT master:
 
 ```bash
-ros2 launch concert_odometry_ros2 concert_odometry.launch.py
+reset
+ecat_master
 ```
 
-## Converting and Fusing PointCloud Data
-
-To convert PointCloud data to LaserScan and fuse multiple LaserScans into a single `/scan` topic, use:
+Terminal 2, XBot2:
 
 ```bash
+xbot2-core --hw ec_imp -V
+```
+
+Wait until XBot2 is fully running before enabling navigation.
+
+## 2. Enable And Test Omnisteering
+
+Terminal 3, source ROS and check XBot2:
+
+```bash
+source ~/data/forest_ws/install/setup.bash
+export USE_SIM_TIME=false
+
+ros2 service list | grep xbotcore
+ros2 topic list | grep omnisteering
+```
+
+Enable omnisteering:
+
+```bash
+ros2 service call /xbotcore/omnisteering/switch std_srvs/srv/SetBool "{data: true}"
+ros2 service call /xbotcore/omnisteering/state xbot_msgs/srv/PluginStatus "{}"
+```
+
+Low-speed manual tests:
+
+```bash
+ros2 topic pub -r 10 /omnisteering/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.05, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
+```
+
+```bash
+ros2 topic pub -r 10 /omnisteering/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: 0.05, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
+```
+
+```bash
+ros2 topic pub -r 10 /omnisteering/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.2}}"
+```
+
+Stop after every test:
+
+```bash
+ros2 topic pub --once /omnisteering/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
+```
+
+Do not start Nav2 until forward, lateral, and yaw commands all move correctly.
+
+## 3. Start Odometry
+
+Terminal 4:
+
+```bash
+source ~/data/forest_ws/install/setup.bash
+export USE_SIM_TIME=false
+ros2 launch concert_odometry_ros2 concert_odometry.launch.py use_sim_time:=false
+```
+
+Check odometry and TF:
+
+```bash
+ros2 topic echo --once /base_link/odom
+ros2 run tf2_ros tf2_echo odom base_link
+```
+
+Both must work before Nav2 starts.
+
+## 4. Start LiDAR Fusion To `/scan`
+
+Terminal 5:
+
+```bash
+source ~/data/forest_ws/install/setup.bash
+export USE_SIM_TIME=false
 ros2 launch concert_navigation master_lidar_conversion_fuse.launch.py
 ```
 
-This script converts the PointCloud data from the 3D LiDAR into a 2D LaserScan format suitable for SLAM and navigation.
-
-## Enabling SLAM (Simultaneous Localization and Mapping)
-
-To start mapping the environment using the SLAM Toolbox and automatically save the map:
+Check scan:
 
 ```bash
+ros2 topic hz /scan
+ros2 topic echo --once /scan
+```
+
+## 5. Navigation With A Saved Map
+
+Terminal 6, start localization. Replace the map path with the map you actually
+want to use:
+
+```bash
+source ~/data/forest_ws/install/setup.bash
+export USE_SIM_TIME=false
+ros2 launch concert_localization localization.launch.py map_file:=/absolute/path/to/map.yaml use_sim_time:=false
+```
+
+Check localization TF:
+
+```bash
+ros2 run tf2_ros tf2_echo map odom
+```
+
+Terminal 7, start Nav2:
+
+```bash
+source ~/data/forest_ws/install/setup.bash
+export USE_SIM_TIME=false
+ros2 launch concert_navigation path_planner.launch.py use_sim_time:=false
+```
+
+Check Nav2 command topics:
+
+```bash
+ros2 topic list | grep -E "cmd_vel_nav|cmd_vel_smoothed|collision_monitor|omnisteering"
+ros2 topic info /cmd_vel_nav
+ros2 topic info /cmd_vel_smoothed
+ros2 topic info /omnisteering/cmd_vel
+```
+
+Expected behavior:
+
+- `controller_server` and `recoveries_server` publish toward `cmd_vel_nav`
+- `velocity_smoother` publishes `cmd_vel_smoothed`
+- `collision_monitor` publishes `/omnisteering/cmd_vel`
+
+## 6. Send A Goal
+
+RViz is the safest normal workflow:
+
+```bash
+rviz2 --ros-args -p use_sim_time:=false
+```
+
+In RViz:
+
+1. Set fixed frame to `map`.
+2. Use `2D Pose Estimate` if AMCL needs the initial pose.
+3. Use `Nav2 Goal` to send a nearby goal first.
+
+For a small CLI smoke test:
+
+```bash
+ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose "{pose: {header: {frame_id: map}, pose: {position: {x: 0.5, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}"
+```
+
+Start with a short straight goal in open space. Then test lateral goals and
+rotations.
+
+## 7. Mapping / SLAM Mode
+
+For mapping, start odometry and `/scan` first, then:
+
+```bash
+source ~/data/forest_ws/install/setup.bash
+export USE_SIM_TIME=false
 ros2 launch concert_navigation master_mapping_slam_saver.launch.py
 ```
 
-### Saving the Map
-
-Once you've completed mapping, save the generated map using the `nav2_map_server` package:
+Save a map:
 
 ```bash
 ros2 run nav2_map_server map_saver_cli -f maps/myworld
 ```
 
-This will save the map in the `maps/` directory under the filename `myworld`. Adjust the path and file name as needed.
+The current planner config uses `allow_unknown: false`, which is safer for
+saved-map navigation. If you want live SLAM navigation through unknown space,
+set `allow_unknown: true` in:
 
-## Starting the Navigation Stack
-
-After completing the map creation, start the navigation stack by initializing localization using AMCL (Adaptive Monte Carlo Localization) to position the robot within the known map:
-
-```bash
-ros2 launch concert_localization localization.launch.py
+```text
+concert_navigation/config/planner_server.yaml
 ```
 
-This command enables AMCL, allowing the robot to localize itself in the previously created map.
+## 8. Stop Safely
 
-### Starting Path Planning with Nav2
+Preferred stop order:
 
-To enable obstacle-avoiding path planning and navigate the Concert robot on the built map:
-
-```bash
-ros2 launch concert_navigation path_planner.launch.py
-```
-
-## Autonomous Navigation and Simultaneous Mapping
-
-For autonomous navigation while building a map simultaneously, use the SLAM Toolbox with its localization feature and the navigation stack. This setup enables the robot to explore the environment, build the map, and navigate autonomously.
-
-1. **Start SLAM Toolbox with Navigation Enabled**:
-    ```bash
-    ros2 launch concert_navigation master_mapping_slam_saver.launch.py
-    ```
-
-2. **Activate the Navigation Stack**:
-    After launching SLAM Toolbox, ensure that the navigation stack is enabled to allow for obstacle-avoiding path planning. Use the following command:
-
-    ```bash
-    ros2 launch concert_navigation path_planner.launch.py
-    ```
-
-## 3D Mapping with RTAB-Map
-
-For 3D mapping, Concert uses RTAB-Map, which allows real-time 3D mapping and localization. Since Concert has two 3D PointCloud sensors, you will also need to fuse their data.
-
-1. **Fuse the 3D PointClouds**:
-    To fuse the data from the two 3D PointCloud sensors, use the following command:
-    ```bash
-    ros2 launch concert_navigation master_cloud_multi_merger.launch.py
-    ```
-2. **Launch RTAB-Map for 3D Mapping**:
-    Use the following command to start the RTAB-Map process:
-    ```bash
-    ros2 launch concert_mapping rtab_vlp16.launch.py
-    ```
-### Saving PointClouds as `.pcd` Files
-
-To save the fused PointCloud data into `.pcd` files for later use:
+1. Cancel the Nav2 goal in RViz or stop the Nav2 launch.
+2. Publish one zero command:
 
 ```bash
-ros2 launch concert_mapping pointcloud_to_pcd.launch.py
+ros2 topic pub --once /omnisteering/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
 ```
 
-The resulting `.pcd` files will be stored in the specified directory `concert_mapping/pointclouds/`.
+3. Stop localization, lidar, odometry, then XBot2/EtherCAT.
 
-### Replacing the PointCloud with Saved `.pcd` Data
+Always keep the physical emergency stop available during first tests.
 
-To load the saved `.pcd` file and use it as the PointCloud source:
+## Troubleshooting
+
+If the robot does not move:
 
 ```bash
-ros2 launch concert_mapping pcd_to_pointcloud.launch.py
+ros2 topic echo /cmd_vel_nav
+ros2 topic echo /cmd_vel_smoothed
+ros2 topic echo /omnisteering/cmd_vel
 ```
 
-This replaces the live sensor data with the pre-saved PointCloud data, enabling operations using previously captured environments.
+If `/cmd_vel_nav` has commands but `/cmd_vel_smoothed` does not, check
+`velocity_smoother`. If `/cmd_vel_smoothed` has commands but
+`/omnisteering/cmd_vel` does not, check `collision_monitor`.
+
+If Nav2 cannot transform:
+
+```bash
+ros2 run tf2_ros tf2_echo map odom
+ros2 run tf2_ros tf2_echo odom base_link
+```
+
+If the local costmap is empty:
+
+```bash
+ros2 topic hz /scan
+ros2 topic echo --once /local_costmap/published_footprint
+```
+
+If the robot tries to rotate like a differential drive, check that:
+
+```bash
+grep -n "motion_model" concert_navigation/config/controller.yaml
+grep -n "max_velocity" concert_navigation/config/velocity_smoother.yaml
+```
+
+Expected values are `motion_model: "Omni"` and nonzero Y velocity limits.
