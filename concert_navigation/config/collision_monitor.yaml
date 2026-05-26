@@ -4,6 +4,7 @@ collision_monitor:
     odom_frame_id: "odom"
     cmd_vel_in_topic: "cmd_vel_smoothed"
     cmd_vel_out_topic: "omnisteering/cmd_vel"
+    enable_stamped_cmd_vel: false
     state_topic: "collision_monitor_state"
     transform_tolerance: 0.2
     source_timeout: 1.0
@@ -11,7 +12,16 @@ collision_monitor:
     stop_pub_timeout: 2.0
     # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
     # and robot footprint for "approach" action type.
-    polygons: ["FootprintApproach"]
+    polygons: ["PolygonSlow", "FootprintApproach"]
+    PolygonSlow:
+      type: "polygon"
+      points: "[[0.95, 0.65], [0.95, -0.65], [-0.95, -0.65], [-0.95, 0.65]]"
+      action_type: "slowdown"
+      min_points: 4
+      slowdown_ratio: 0.4
+      visualize: True
+      polygon_pub_topic: "polygon_slow"
+      enabled: True
     FootprintApproach:
       type: "polygon"
       action_type: "approach"
@@ -24,7 +34,7 @@ collision_monitor:
     observation_sources: ["scan"]
     scan:
       type: "scan"
-      topic: "scan"
+      topic: "/scan"
       min_height: 0.15
       max_height: 2.0
       enabled: True
