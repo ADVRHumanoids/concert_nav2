@@ -10,9 +10,16 @@ collision_monitor:
     source_timeout: 1.0
     base_shift_correction: True
     stop_pub_timeout: 2.0
-    # Polygons represent zone around the robot for "stop", "slowdown" and "limit" action types,
-    # and robot footprint for "approach" action type.
-    polygons: ["PolygonSlow", "FootprintApproach"]
+    # Layered safety: stop -> slowdown -> approach (footprint-aware time-to-collision)
+    polygons: ["PolygonStop", "PolygonSlow", "FootprintApproach"]
+    PolygonStop:
+      type: "polygon"
+      points: "[[0.75, 0.50], [0.75, -0.50], [-0.75, -0.50], [-0.75, 0.50]]"
+      action_type: "stop"
+      min_points: 4
+      visualize: True
+      polygon_pub_topic: "polygon_stop"
+      enabled: True
     PolygonSlow:
       type: "polygon"
       points: "[[0.95, 0.65], [0.95, -0.65], [-0.95, -0.65], [-0.95, 0.65]]"

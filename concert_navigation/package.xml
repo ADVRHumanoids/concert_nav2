@@ -9,6 +9,10 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+
   <exec_depend>nav2_lifecycle_manager</exec_depend>
   <exec_depend>nav2_controller</exec_depend>
   <exec_depend>nav2_planner</exec_depend>
@@ -24,8 +28,11 @@
   <exec_depend>nav2_amcl</exec_depend>
   <exec_depend>slam_toolbox</exec_depend>
   <exec_depend>pointcloud_to_laserscan</exec_depend>
+  <exec_depend>ira_laser_tools</exec_depend>
   <exec_depend>perception_utils_ros2</exec_depend>
   <exec_depend>concert_mapping</exec_depend>
+  <exec_depend>concert_odometry_ros2</exec_depend>
+  <exec_depend>concert_localization</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
