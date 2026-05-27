@@ -72,7 +72,7 @@ rviz2 --ros-args -p use_sim_time:=true
 To start the odometry process, which helps the robot estimate its position and movement:
 
 ```bash
-ros2 launch concert_odometry_ros2 concert_odometry.launch.py
+ros2 launch concert_odometry_ros2 concert_odometry.launch.py use_sim_time:=true
 ```
 
 ## Converting and Fusing PointCloud Data
@@ -80,7 +80,7 @@ ros2 launch concert_odometry_ros2 concert_odometry.launch.py
 To convert PointCloud data to LaserScan and fuse multiple LaserScans into a single `/scan` topic, use:
 
 ```bash
-ros2 launch perception_utils_ros2 master_lidar_conversion_fuse.launch.py
+ros2 launch perception_utils_ros2 master_lidar_conversion_fuse.launch.py use_sim_time:=true
 ```
 
 This script converts the PointCloud data from the 3D LiDAR into a 2D LaserScan format suitable for SLAM and navigation.
@@ -90,7 +90,7 @@ This script converts the PointCloud data from the 3D LiDAR into a 2D LaserScan f
 To start mapping the environment using the SLAM Toolbox and automatically save the map:
 
 ```bash
-ros2 launch concert_navigation master_mapping_slam_saver.launch.py
+ros2 launch concert_navigation master_mapping_slam_saver.launch.py use_sim_time:=true
 ```
 
 ### Saving the Map
@@ -108,7 +108,7 @@ This will save the map in the `maps/` directory under the filename `myworld`. Ad
 After completing the map creation, start the navigation stack by initializing localization using AMCL (Adaptive Monte Carlo Localization) to position the robot within the known map:
 
 ```bash
-ros2 launch concert_localization localization.launch.py
+ros2 launch concert_localization localization.launch.py use_sim_time:=true
 ```
 
 This command enables AMCL, allowing the robot to localize itself in the previously created map.
@@ -118,7 +118,7 @@ This command enables AMCL, allowing the robot to localize itself in the previous
 To enable obstacle-avoiding path planning and navigate the Concert robot on the built map:
 
 ```bash
-ros2 launch concert_navigation path_planner.launch.py
+ros2 launch concert_navigation path_planner.launch.py use_sim_time:=true
 ```
 
 ## Autonomous Navigation and Simultaneous Mapping
@@ -127,14 +127,14 @@ For autonomous navigation while building a map simultaneously, use the SLAM Tool
 
 1. **Start SLAM Toolbox with Navigation Enabled**:
     ```bash
-    ros2 launch concert_navigation master_mapping_slam_saver.launch.py
+    ros2 launch concert_navigation master_mapping_slam_saver.launch.py use_sim_time:=true
     ```
 
 2. **Activate the Navigation Stack**:
     After launching SLAM Toolbox, ensure that the navigation stack is enabled to allow for obstacle-avoiding path planning. Use the following command:
 
     ```bash
-    ros2 launch concert_navigation path_planner.launch.py
+    ros2 launch concert_navigation path_planner.launch.py use_sim_time:=true
     ```
 ## Aborting Goal CLI
 ```bash
