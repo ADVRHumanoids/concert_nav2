@@ -2,6 +2,7 @@ velocity_smoother:
   ros__parameters:
     smoothing_frequency: 20.0
     scale_velocities: False
+    enable_stamped_cmd_vel: false
     feedback: "OPEN_LOOP"              # safer default; switch to CLOSED_LOOP once odom validated
     max_velocity: [0.5, 0.5, 1.9]
     min_velocity: [-0.5, -0.5, -1.9]

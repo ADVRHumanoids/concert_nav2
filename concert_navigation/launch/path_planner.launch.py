@@ -6,9 +6,9 @@ from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    # 1) Pull the environment variable 'USE_SIM_TIME', default to 'true' if not set
-    #    so that if you do not run `export USE_SIM_TIME=...`, it will use `true`.
-    use_sim_time_env = EnvironmentVariable(name='USE_SIM_TIME', default_value='true')
+    # 1) Pull the environment variable 'USE_SIM_TIME', default to 'false' if not set.
+    #    Real robot runs should not wait for /clock unless explicitly requested.
+    use_sim_time_env = EnvironmentVariable(name='USE_SIM_TIME', default_value='false')
 
     # 2) Use this environment variable as the default for the 'use_sim_time' LaunchConfiguration
     use_sim_time_arg = DeclareLaunchArgument(
@@ -48,7 +48,7 @@ def generate_launch_description():
             {'use_sim_time': use_sim_time},  # Override with launch argument
             local_costmap_yaml
         ],
-        remappings=remappings
+        remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]
     )
 
     planner_node = Node(
@@ -73,7 +73,7 @@ def generate_launch_description():
             recovery_yaml,
             {'use_sim_time': use_sim_time}
         ],
-        remappings=remappings + [('/cmd_vel', '/omnisteering/cmd_vel')]
+        remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]
     )
 
     bt_navigator_node = Node(
@@ -86,7 +86,6 @@ def generate_launch_description():
             {'use_sim_time': use_sim_time},  # override
             {
                 'default_nav_to_pose_bt_xml': behavior_tree_path,
-                'default_nav_through_poses_bt_xml': behavior_tree_path,
             },
         ],
         remappings=remappings
@@ -101,7 +100,7 @@ def generate_launch_description():
             velocity_smoother_yaml,
             {'use_sim_time': use_sim_time}
         ],
-        remappings=remappings + [('smoothed_cmd_vel', 'cmd_vel_smoothed')]
+        remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]
     )
 
     collision_monitor_node = Node(
@@ -160,4 +159,3 @@ def generate_launch_description():
         smoother_node,
         lifecycle_manager_node
     ])
-

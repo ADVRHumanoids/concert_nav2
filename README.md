@@ -80,7 +80,7 @@ ros2 launch concert_odometry_ros2 concert_odometry.launch.py
 To convert PointCloud data to LaserScan and fuse multiple LaserScans into a single `/scan` topic, use:
 
 ```bash
-ros2 launch concert_navigation master_lidar_conversion_fuse.launch.py
+ros2 launch perception_utils_ros2 master_lidar_conversion_fuse.launch.py
 ```
 
 This script converts the PointCloud data from the 3D LiDAR into a 2D LaserScan format suitable for SLAM and navigation.
@@ -148,7 +148,7 @@ For 3D mapping, Concert uses RTAB-Map, which allows real-time 3D mapping and loc
 1. **Fuse the 3D PointClouds**:
     To fuse the data from the two 3D PointCloud sensors, use the following command:
     ```bash
-    ros2 launch concert_navigation master_cloud_multi_merger.launch.py
+    ros2 launch perception_utils_ros2 cloud_multi_merger.launch.py
     ```
 2. **Launch RTAB-Map for 3D Mapping**:
     Use the following command to start the RTAB-Map process:

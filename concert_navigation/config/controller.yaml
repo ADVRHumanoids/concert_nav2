@@ -6,6 +6,9 @@ controller_server:
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.001
     min_theta_velocity_threshold: 0.001
+    odom_topic: "/base_link/odom"
+    odom_duration: 0.1
+    enable_stamped_cmd_vel: false
     failure_tolerance: 0.3
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
@@ -49,7 +52,7 @@ controller_server:
       temperature: 0.3
       gamma: 0.015
       motion_model: "Omni"
-      visualize: true
+      visualize: false
       regenerate_noises: false
       enforce_path_inversion: true
       retry_attempt_limit: 1
