@@ -6,15 +6,13 @@ from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    # 1) Pull the environment variable 'USE_SIM_TIME', default to 'false' if not set.
-    #    Real robot runs should not wait for /clock unless explicitly requested.
-    use_sim_time_env = EnvironmentVariable(name='USE_SIM_TIME', default_value='false')
+    use_sim_time_env = EnvironmentVariable(name='USE_SIM_TIME', default_value='true')
 
     # 2) Use this environment variable as the default for the 'use_sim_time' LaunchConfiguration
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
         default_value=use_sim_time_env,
-        description='Use simulation time (true for simulation, false for real hardware)'
+        description='Use simulation time'
     )
 
     # 3) Create a LaunchConfiguration object to reference 'use_sim_time' in our Node parameters

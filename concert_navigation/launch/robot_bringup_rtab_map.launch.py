@@ -11,7 +11,7 @@ def generate_launch_description():
 
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
-        default_value=EnvironmentVariable(name='USE_SIM_TIME', default_value='false'),
+        default_value=EnvironmentVariable(name='USE_SIM_TIME', default_value='true'),
         description='Use simulation time for all included mapping nodes'
     )
     use_sim_time = LaunchConfiguration('use_sim_time')

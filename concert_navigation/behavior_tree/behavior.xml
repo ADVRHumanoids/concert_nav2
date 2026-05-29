@@ -8,7 +8,7 @@
               <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"
                 error_code_id="{compute_path_error_code}"/>
               <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"
-                smoother_id="savitzky_golay_smoother" max_smoothing_duration="1.0"
+                smoother_id="simple_smoother" max_smoothing_duration="1.0"
                 check_for_collisions="false" error_code_id="{smoother_error_code}"/>
             </Sequence>
             <ReactiveFallback name="ComputePathToPoseRecoveryFallback">
