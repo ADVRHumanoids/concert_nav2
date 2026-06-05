@@ -272,3 +272,65 @@ grep -n "max_velocity" concert_navigation/config/velocity_smoother.yaml
 ```
 
 Expected values are `motion_model: "Omni"` and nonzero Y velocity limits.
+
+
+## Launching RViz2 from inside the Docker container
+
+RViz2 runs inside the `concert_nav2-dev-1` container, but it needs to draw on the
+host's X display. The container does not share the host's X authority cookie by
+default, so you have to copy the cookie in and point RViz at the forwarded display.
+
+### 1. On the host: forward the X authority cookie into the container
+
+Confirm the host has a forwarded display (this is set when you SSH in with X11
+forwarding, e.g. `ssh -X`):
+
+```bash
+echo $DISPLAY
+# e.g. localhost:10.0
+```
+
+Copy the host's X cookie for that display into `/tmp/host.xauth` inside the
+container. Replace `:10` with your own display number if `$DISPLAY` differs:
+
+```bash
+xauth nlist :10 | sed -e 's/^..../ffff/' \
+  | docker exec -u user -i concert_nav2-dev-1 xauth -f /tmp/host.xauth nmerge -
+```
+
+> If this prints `xauth: file /tmp/host.xauth does not exist`, just run the same
+> command again — `nmerge` creates the file on the first successful pass, and the
+> warning only appears when the target file did not exist beforehand.
+
+### 2. Attach to the container
+
+```bash
+docker container attach concert_nav2-dev-1
+```
+
+The prompt should change to the container shell, e.g. `(env) user@concert-vision:~$`.
+
+### 3. Inside the container: point RViz at the forwarded display
+
+```bash
+# Sanity-check the cookie file was created in step 1
+ls -l /tmp/host.xauth
+
+export DISPLAY=localhost:10.0          # match the host's $DISPLAY from step 1
+export XAUTHORITY=/tmp/host.xauth
+
+xauth list                             # must print at least one cookie line, e.g.
+# #ffff#636f6e636572742d766973696f6e#:10  MIT-MAGIC-COOKIE-1  1ed95019ee861fdc865bb3373cef3554
+```
+
+If `xauth list` prints nothing, go back to step 1 — the cookie was not merged.
+
+### 4. Launch RViz2
+
+```bash
+rviz2
+```
+
+RViz should open a window on the host display. From here follow the
+[Send A Goal](#6-send-a-goal) workflow above (set the fixed frame to `map`, set an
+initial pose if needed, then send a `Nav2 Goal`).

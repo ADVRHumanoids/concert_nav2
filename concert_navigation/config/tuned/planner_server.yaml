@@ -1,0 +1,32 @@
+# =============================================================================
+# TUNED COPY of planner_server.yaml  —  see NAV2_TUNING.md §5 (P1-4).
+# CHANGES vs original:
+#   cost_travel_multiplier 2.0 -> 3.0  : with the real potential field from the
+#       fixed inflation, this is what makes A* keep the path CENTRED in aisles.
+#   tolerance 0.5 -> 0.25              : matches the goal checker xy tolerance.
+#   allow_unknown stays FALSE          : decision #1, navigating a saved map.
+# Planner kept as SmacPlanner2D (decision #3 — NOT Theta*; see NAV2_TUNING.md §5.4).
+# Everything else is identical to the original. Original file is untouched.
+# =============================================================================
+planner_server:
+  ros__parameters:
+    use_sim_time: False
+    expected_planner_frequency: 20.0
+    planner_plugins: ["GridBased"]
+    costmap_update_timeout: 1.0
+    GridBased:
+      plugin: "nav2_smac_planner::SmacPlanner2D"
+      tolerance: 0.25                   # TUNED: was 0.5 (match goal xy_goal_tolerance)
+      downsample_costmap: false
+      downsampling_factor: 1
+      allow_unknown: false              # saved-map navigation (decision #1)
+      max_iterations: 1000000
+      max_on_approach_iterations: 1000
+      max_planning_time: 2.0
+      cost_travel_multiplier: 3.0       # TUNED: was 2.0 (centre paths using the potential field)
+      use_final_approach_orientation: false
+      smoother:
+        max_iterations: 1000
+        w_smooth: 0.3
+        w_data: 0.2
+        tolerance: 1.0e-10

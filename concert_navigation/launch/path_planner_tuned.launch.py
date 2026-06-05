@@ -5,6 +5,19 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
+# =============================================================================
+# TUNED Nav2 bringup for the CONCERT omnidirectional robot.
+#
+# This is a NEW launcher that mirrors path_planner.launch.py but loads the
+# tuned configuration set from  config/tuned/  and the tuned behavior tree
+# config/tuned/behavior_tuned.xml.  The ORIGINAL path_planner.launch.py and the
+# original config/*.yaml + behavior_tree/*.xml are left UNTOUCHED, so the old
+# setup remains a working fallback.
+#
+# What changed (and why) is documented in NAV2_TUNING.md. Launch with:
+#   ros2 launch concert_navigation path_planner_tuned.launch.py use_sim_time:=false
+# =============================================================================
+
 def generate_launch_description():
     use_sim_time_env = EnvironmentVariable(name='USE_SIM_TIME', default_value='false')
     use_sim_time_arg = DeclareLaunchArgument(
@@ -14,18 +27,19 @@ def generate_launch_description():
     )
     use_sim_time = LaunchConfiguration('use_sim_time')
 
-    # Paths to the configuration files
+    # Paths to the TUNED configuration files (config/tuned/)
     package_dir = get_package_share_directory('concert_navigation')
-    controller_yaml = os.path.join(package_dir, 'config', 'controller.yaml')
-    bt_navigator_yaml = os.path.join(package_dir, 'config', 'bt_navigator.yaml')
-    planner_yaml = os.path.join(package_dir, 'config', 'planner_server.yaml')
-    recovery_yaml = os.path.join(package_dir, 'config', 'recovery.yaml')
-    smoother_server_yaml = os.path.join(package_dir, 'config', 'smoother_server.yaml')
-    global_costmap_yaml = os.path.join(package_dir, 'config', 'global_costmap.yaml')
-    local_costmap_yaml = os.path.join(package_dir, 'config', 'local_costmap.yaml')
-    velocity_smoother_yaml = os.path.join(package_dir, 'config', 'velocity_smoother.yaml')
-    collision_monitor_yaml = os.path.join(package_dir, 'config', 'collision_monitor.yaml')
-    behavior_tree_path = os.path.join(package_dir, 'behavior_tree', 'basic.xml')
+    config_dir = os.path.join(package_dir, 'config', 'tuned')
+    controller_yaml = os.path.join(config_dir, 'controller.yaml')
+    bt_navigator_yaml = os.path.join(config_dir, 'bt_navigator.yaml')
+    planner_yaml = os.path.join(config_dir, 'planner_server.yaml')
+    recovery_yaml = os.path.join(config_dir, 'recovery.yaml')
+    smoother_server_yaml = os.path.join(config_dir, 'smoother_server.yaml')
+    global_costmap_yaml = os.path.join(config_dir, 'global_costmap.yaml')
+    local_costmap_yaml = os.path.join(config_dir, 'local_costmap.yaml')
+    velocity_smoother_yaml = os.path.join(config_dir, 'velocity_smoother.yaml')
+    collision_monitor_yaml = os.path.join(config_dir, 'collision_monitor.yaml')
+    behavior_tree_path = os.path.join(config_dir, 'behavior_tuned.xml')
 
     # Define remappings for tf topics
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
@@ -64,7 +78,7 @@ def generate_launch_description():
             remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]
         ),
 
-        # Behavior Tree Navigator
+        # Behavior Tree Navigator (uses the tuned behavior tree)
         Node(
             package='nav2_bt_navigator',
             executable='bt_navigator',
@@ -78,7 +92,8 @@ def generate_launch_description():
             remappings=remappings
         ),
 
-        # Velocity Smoother with its specific configuration
+        # Velocity Smoother (now actually in the command chain — collision_monitor
+        # consumes cmd_vel_smoothed in the tuned collision_monitor.yaml)
         Node(
             package='nav2_velocity_smoother',
             executable='velocity_smoother',
@@ -88,7 +103,7 @@ def generate_launch_description():
             remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]
         ),
 
-        # Collision Monitor with its specific configuration
+        # Collision Monitor (final stage -> /omnisteering/cmd_vel)
         Node(
             package='nav2_collision_monitor',
             executable='collision_monitor',
@@ -98,7 +113,8 @@ def generate_launch_description():
             remappings=remappings
         ),
 
-        # Smoother Server for smoothing the global path
+        # Smoother Server kept DISABLED — SmacPlanner2D's internal smoother plus
+        # MPPI's local re-optimization are sufficient (see NAV2_TUNING.md §6).
         # Node(
         #     package='nav2_smoother',
         #     executable='smoother_server',

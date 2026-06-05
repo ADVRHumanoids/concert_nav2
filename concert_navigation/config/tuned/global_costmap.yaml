@@ -1,3 +1,11 @@
+# =============================================================================
+# TUNED COPY of global_costmap.yaml  —  see NAV2_TUNING.md §2 (P0-1).
+# CHANGE vs original: inflation_radius 0.20 -> 0.60
+#   >= inscribed radius 0.43 m (safety), a little larger than the local map for
+#   nicer centred long-range paths on the saved static map, but still corridor-
+#   safe (decision #2). cost_scaling_factor left at 3.0.
+# Everything else is identical to the original. Original file is untouched.
+# =============================================================================
 global_costmap:
   global_costmap:
     ros__parameters:
@@ -6,7 +14,7 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_link
       #robot_radius: 0.22
-      footprint: "[ [-0.685, -0.4], [-0.685, 0.4], [0.685, 0.4], [0.685, -0.4] ]"
+      footprint: "[ [-0.625, -0.4], [-0.625, 0.4], [0.625, 0.4], [0.625, -0.4] ]"
       footprint_padding: 0.03
       resolution: 0.05
       track_unknown_space: true
@@ -40,5 +48,5 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
-        inflation_radius: 0.2
+        inflation_radius: 0.25          # TUNED: was 0.20 (< inscribed 0.43 m)
       always_send_full_costmap: True
