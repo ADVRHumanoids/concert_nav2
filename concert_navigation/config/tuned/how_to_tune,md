@@ -1,0 +1,195 @@
+# Guida al tuning Nav2 — CONCERT (aggiornata 2026-06-10)
+
+> Aggiornamento dopo l'analisi della configurazione attuale in `config/tuned/`.
+> Parte dei fix della versione precedente di questa guida è stata applicata, ma c'è
+> **un errore bloccante (Causa 0)** che annulla il fix principale, tre valori fuori
+> bersaglio e quattro fix mai applicati. Questa guida sostituisce la precedente e
+> contiene la configurazione di riferimento completa, file per file.
+
+---
+
+## Causa 0 — BLOCCANTE: doppia chiave `plugin` in `controller.yaml` → lo shim non viene mai caricato
+
+Nel blocco `FollowPath` di `tuned/controller.yaml` ci sono **due** chiavi `plugin:`:
+
+```yaml
+FollowPath:
+  plugin: "nav2_rotation_shim_controller::RotationShimController"   # riga 44
+  primary_controller: "nav2_mppi_controller::MPPIController"
+  ...parametri shim...
+  plugin: "nav2_mppi_controller::MPPIController"                    # riga 53 ← QUESTA VINCE
+  ...parametri MPPI...
+```
+
+Il parser dei parametri ROS 2 (`rcl_yaml_param_parser`) **non segnala errore** sulle
+chiavi duplicate: tiene silenziosamente l'**ultimo** valore. Verificato su questa
+macchina (Jazzy, test con rclpy): `FollowPath.plugin` risolve a
+`nav2_mppi_controller::MPPIController`.
+
+**Conseguenza:** il controller_server carica MPPI "liscio". Il RotationShim e tutti i
+suoi parametri (`rotate_to_heading_angular_vel`, `rotate_to_goal_heading`, ecc.) sono
+**inerti**. Ecco perché il robot non si gira di muso, non ruota lungo il path e resta
+nel dilemma del deadband: stai ancora guidando col solo MPPI.
+
+**Fix: cancella la riga `plugin: "nav2_mppi_controller::MPPIController"` (riga 53).**
+Solo quella riga. Lo shim istanzia il `primary_controller` nello **stesso namespace**
+`FollowPath.*`, quindi i parametri MPPI vanno bene "piatti" dove sono adesso: non vanno
+nidificati altrove e non serve una seconda chiave `plugin`.
+
+**Verifica dopo il rebuild:**
+
+```bash
+ros2 param get /controller_server FollowPath.plugin
+# atteso: nav2_rotation_shim_controller::RotationShimController
+```
+
+e nel log di avvio del controller_server deve comparire la creazione del
+RotationShimController (non solo dell'MPPI).
+
+---
+
+## Stato dei fix (10/06)
+
+| # | Fix | Stato |
+|---|-----|-------|
+| 0 | Shim caricato davvero | ❌ **rotto** (doppia chiave `plugin`) |
+| 1 | `inflation_radius` ≥ 0.43 | ✅ applicato (0.45 locale / 0.55 globale) |
+| 1b | `cost_scaling_factor` | ⚠️ fuori bersaglio: 15 locale (accettabile ma alto), **30 globale (troppo)** — il campo di potenziale sparisce e il path torna a filo muro |
+| 2 | deadband rotazionale ridotto | ⚠️ applicato (0.5→0.1 nei due file) ma 0.1 è **sotto** la soglia che la base traccia; valore giusto ~0.2 con lo shim attivo |
+| 3 | footprint reale 1.37 m | ❌ ancora ±0.625 (1.25 m) |
+| 4 | RotationShim | ❌ vedi Causa 0 |
+| 5 | collision monitor per lo stretto | ❌ `PolygonStop` ancora ±0.75×±0.50 |
+| 5b | `Spin` fuori dalla RoundRobin | ❌ ancora presente |
+| 5c | RateController a 2 Hz | ❌ ancora 1.0 |
+
+Nota: i commenti in testa a `local_costmap.yaml`, `global_costmap.yaml` e
+`velocity_smoother.yaml` descrivono ancora i valori vecchi (0.50/0.60, scaling 3.0,
+deadband 0.05) — aggiornarli quando si toccano i file.
+
+---
+
+## Configurazione di riferimento, file per file
+
+### `controller.yaml`
+
+| Param | Ora | Metti | Perché |
+|---|---|---|---|
+| riga 53 `plugin:` duplicata | presente | **ELIMINA** | Causa 0: senza questo, tutto il resto è invisibile |
+| `TwirlingCritic.cost_weight` | 10.0 | **2.0** | penalizza **ogni** wz: a peso 10 vince su PathAngle (2.2) e il robot preferisce lo strafe → moto diagonale col muso fermo. Il jitter anti-sterzo ora lo gestiscono deadband+smoother+shim. Se ricompare oscillazione di heading: 3–4, non 10 |
+| `PathAngleCritic.cost_weight` | 2.2 | **4.0** | mode 0 ("faccia la direzione di marcia") deve **vincere** sui termini anti-rotazione |
+| `PathAngleCritic.mode` | 0 | 0 (tieni) | è il fix corretto già applicato |
+| `PreferForwardCritic.cost_weight` | 1.5 | **3.5** | rinforza il "di muso" (range consigliato 3–4) |
+| `VelocityDeadbandCritic.deadband_velocities` | [0.05, 0.05, 0.1] | **[0.05, 0.05, 0.2]** | 0.1 lascia passare comandi 0.1–0.2 rad/s che la base esegue male (chatter sterzo). Tenere **sincrono** con `velocity_smoother`. Le rotazioni grandi le fa lo shim a 0.6 |
+| `vy_max` | 0.5 | **0.25** | lo strafe resta per gli allineamenti fini ma smette di essere il modo principale di seguire il path |
+| `vy_std` | 0.2 | 0.1 (opzionale) | meno campioni laterali → meno crab |
+| `enforce_path_inversion` | true | **false** | SmacPlanner2D non genera inversioni: logica morta |
+| `motion_model` | "Omni" | "Omni" (tieni) | serve lo strafe negli spazi stretti |
+| shim: `angular_dist_threshold` 0.785, `angular_disengage_threshold` 0.3925, `forward_sampling_distance` 0.5, `rotate_to_heading_angular_vel` 0.6, `max_angular_accel` 1.0, `simulate_ahead_time` 1.0, `rotate_to_goal_heading` true | — | tieni tutti | valori già corretti per wz_max 0.8 e per la banda 0.5–0.8 in cui la base esegue pulito |
+| `progress_checker.movement_time_allowance` | 10.0 | 10.0; **15.0 solo se** vedi abort durante le rotazioni finali | `SimpleProgressChecker` conta solo lo spostamento XY: una rotazione sul posto lunga >10 s fa scattare l'abort. Con lo shim a 0.6 rad/s un 180° dura ~5 s → ok |
+| `general_goal_checker.yaw_goal_tolerance` | 0.2 | 0.2; 0.25 se l'assetto finale "balla" | la rotazione finale la fa lo shim (`rotate_to_goal_heading`) |
+
+### `velocity_smoother.yaml`
+
+| Param | Ora | Metti | Perché |
+|---|---|---|---|
+| `deadband_velocity` | [0.05, 0.05, 0.1] | **[0.05, 0.05, 0.2]** | sincrono col `VelocityDeadbandCritic`. Se in marcia c'è ancora chatter dello sterzo: prova 0.25–0.3. **Non tornare a 0.5** (uccide il controllo d'assetto) |
+
+### `local_costmap.yaml`
+
+| Param | Ora | Metti | Perché |
+|---|---|---|---|
+| `inflation_radius` | 0.45 | 0.45 (tieni) | ✅ ≥ 0.43 (raggio inscritto). **Mai sotto 0.43** |
+| `cost_scaling_factor` | 15.0 | **10.0** | a 15 il costo decade in ~7 cm: gradiente troppo corto, MPPI "vede" l'ostacolo solo all'ultimo. 10 è il riferimento per spazi stretti |
+| `footprint` | ±0.625 × ±0.4 | **±0.685 × ±0.4** | misura reale 1.37 m: il CostCritic collision-checka col footprint vero (sottodimensionarlo = strusciare nei passaggi diagonali). Non cambia il raggio inscritto (è dominato dalla larghezza) |
+
+### `global_costmap.yaml`
+
+| Param | Ora | Metti | Perché |
+|---|---|---|---|
+| `inflation_radius` | 0.55 | 0.55 (tieni) | ✅ |
+| `cost_scaling_factor` | 30.0 | **6.5** | a 30 il costo muore in ~2 celle (≈10 cm): A* non ha più campo di potenziale e `cost_travel_multiplier 3.0` non ha niente da moltiplicare → **il path torna a filo muro**, lo stesso sintomo che il fix #1 doveva eliminare. Range buono 6–7 |
+| `footprint` | ±0.625 × ±0.4 | **±0.685 × ±0.4** | come sopra |
+
+### `collision_monitor.yaml`
+
+| Param | Ora | Metti | Perché |
+|---|---|---|---|
+| `PolygonStop.points` | ±0.75 × ±0.50 | **±0.70 × ±0.45** | in corridoio ~1 m i muri sono a ±0.5: cadono **dentro** il box → stop appena entri → "non parte / resta fermo". Col footprint reale (±0.685×±0.43) il box resta un e-stop con ~2 cm di pelle |
+| `PolygonSlow.points` | ±0.95 × ±0.65 | **±0.85 × ±0.55** | a ±0.65 rallenta a 0.4× in qualunque corridoio < 1.3 m |
+| `FootprintApproach` | — | tieni invariato | è lui la protezione "intelligente": time-to-collision col footprint vero pubblicato dal local costmap |
+
+### `behavior_tuned.xml`
+
+| Cosa | Ora | Metti | Perché |
+|---|---|---|---|
+| `RateController hz` | 1.0 | **2.0** | replanning più reattivo quando si blocca; in più dà allo shim occasioni di ri-aggancio (lo shim valuta l'errore di heading sui path nuovi) |
+| `<Spin spin_dist="1.57"/>` | presente | **RIMUOVI** dalla RoundRobin | diametro circoscritto ~1.6 m (col footprint vero): in corridoio < 1.6 m si auto-aborta al collision-check o struscia. Restano clear-costmap + Wait + BackUp 0.30@0.10 |
+
+### `recovery.yaml`
+
+Nessuna modifica necessaria una volta tolto lo Spin dalla BT. Se mai riusi `Spin` in
+spazio aperto: `max_rotational_vel` 0.4 → 0.6 e `min_rotational_vel` 0.2 → 0.3
+(0.2–0.4 è proprio la banda in cui la base traccia male).
+
+### `planner_server.yaml`
+
+Nessuna modifica: SmacPlanner2D, `tolerance 0.25`, `cost_travel_multiplier 3.0`,
+`allow_unknown false` sono giusti. Escalation a `SmacPlannerLattice` **solo se**, dopo
+tutti i fix, c'è un varco specifico in cui il robot deve angolarsi in diagonale e il
+2D non lo passa (vedi nota in fondo).
+
+---
+
+## Ordine di applicazione
+
+1. **Causa 0**: elimina la riga `plugin` duplicata in `controller.yaml` — senza questo il resto non si vede.
+2. `cost_scaling_factor`: globale 30 → 6.5, locale 15 → 10.
+3. Deadband 0.2 **in entrambi i file** (smoother + critic, sempre sincroni).
+4. Footprint ±0.685 nei due costmap.
+5. Critics: PathAngle 4.0, PreferForward 3.5, Twirling 2.0, `vy_max` 0.25.
+6. Collision monitor (box stop/slow) + BT (via lo Spin, rate 2 Hz).
+7. Rebuild del workspace (i config vengono **copiati** in `install/` — le modifiche in `src/` non sono attive finché non rebuildi) → validazione sotto.
+
+## Validazione
+
+```bash
+# 1) lo shim è davvero caricato?
+ros2 param get /controller_server FollowPath.plugin
+#    atteso: nav2_rotation_shim_controller::RotationShimController
+
+# 2) comandi: all'inizio di un path col muso storto deve esserci wz≈0.6 quasi puro
+#    (shim che ruota sul posto), poi vx dominante con correzioni wz ≥ 0.2 a tratti
+ros2 topic echo /cmd_vel_nav
+
+# 3) il collision monitor non deve restare in stop durante un goal in corridoio
+ros2 topic echo /collision_monitor_state
+```
+
+In RViz: nei corridoi il **centro deve restare un canale a basso costo** (blu/verde).
+Se il corridoio è inondato di rosso → alza `cost_scaling_factor`; se il path lecca i
+muri in spazio aperto → abbassalo (o alza un po' il raggio). Mai raggio < 0.43.
+
+Sequenza di prova: (1) goal dritto in spazio aperto, (2) goal con muso girato di 90°+
+— deve **prima ruotare sul posto** e poi partire dritto, (3) goal oltre un corridoio.
+
+---
+
+## Perché andava in diagonale senza girarsi (catena completa)
+
+MPPI liscio (Causa 0) + Twirling 10 + PathAngle 2.2 + deadband: ogni wz piccolo viene
+azzerato dallo smoother e penalizzato dal VelocityDeadbandCritic, ogni wz comunque
+penalizzato dal Twirling, mentre lo strafe `vy` è quasi gratis → il minimo di costo per
+MPPI è il "crab" diagonale col muso fermo; la rotazione grossa compare solo al goal
+(GoalAngleCritic). La base, che a bassa velocità traccia male, peggiora il tutto con
+comandi piccoli che cambiano di continuo. Con shim attivo + Twirling basso + PathAngle
+alto, il minimo di costo diventa "girati una volta, pulito, e vai dritto di muso" — e
+il deadband può restare alto quanto serve alla base senza perdere il controllo d'assetto.
+
+## Nota su SmacPlannerLattice (solo se serve davvero)
+
+Il 2D tratta il robot come cerchio da 0.43 m e ignora la lunghezza 1.37 m. Se esiste un
+passaggio dove il robot deve angolarsi per starci (la lunghezza conta già in fase di
+pianificazione), passa a `SmacPlannerLattice` (footprint SE2, primitive olonomiche).
+Caveat: l'analytic expansion è pensata per Ackermann, quindi gli spostamenti laterali
+vengono scomposti in manovre — più pesante e richiede un control set. Da fare solo se,
+a fix completati, un punto specifico continua a non passare.

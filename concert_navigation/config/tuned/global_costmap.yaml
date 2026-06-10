@@ -14,7 +14,7 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_link
       #robot_radius: 0.22
-      footprint: "[ [-0.625, -0.4], [-0.625, 0.4], [0.625, 0.4], [0.625, -0.4] ]"
+      footprint: "[ [-0.685, -0.4], [-0.685, 0.4], [0.685, 0.4], [0.685, -0.4] ]"
       footprint_padding: 0.03
       resolution: 0.05
       track_unknown_space: true
@@ -47,6 +47,6 @@ global_costmap:
         map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.25          # TUNED: was 0.20 (< inscribed 0.43 m)
+        cost_scaling_factor: 6.5
+        inflation_radius: 0.55          # TUNED: was 0.20 (< inscribed 0.43 m)
       always_send_full_costmap: True

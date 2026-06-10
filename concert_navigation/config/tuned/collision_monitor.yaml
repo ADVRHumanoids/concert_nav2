@@ -27,7 +27,7 @@ collision_monitor:
     polygons: ["PolygonStop", "PolygonSlow", "FootprintApproach"]
     PolygonStop:
       type: "polygon"
-      points: "[[0.75, 0.50], [0.75, -0.50], [-0.75, -0.50], [-0.75, 0.50]]"
+      points: "[[0.70, 0.45], [0.70, -0.45], [-0.70, -0.45], [-0.70, 0.45]]"
       action_type: "stop"
       min_points: 4
       visualize: True
@@ -35,7 +35,7 @@ collision_monitor:
       enabled: True
     PolygonSlow:
       type: "polygon"
-      points: "[[0.95, 0.65], [0.95, -0.65], [-0.95, -0.65], [-0.95, 0.65]]"
+      points: "[[0.85, 0.55], [0.85, -0.55], [-0.85, -0.55], [-0.85, 0.55]]"
       action_type: "slowdown"
       min_points: 4
       slowdown_ratio: 0.4

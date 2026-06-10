@@ -19,13 +19,13 @@ local_costmap:
       height: 5
       resolution: 0.05
       #robot_radius: 0.22
-      footprint: "[ [-0.625, -0.4], [-0.625, 0.4], [0.625, 0.4], [0.625, -0.4] ]"
+      footprint: "[ [-0.685, -0.4], [-0.685, 0.4], [0.685, 0.4], [0.685, -0.4] ]"
       footprint_padding: 0.03
       plugins: ["obstacle_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.20          # TUNED: was 0.20 (< inscribed 0.43 m)
+        cost_scaling_factor: 10.0
+        inflation_radius: 0.45         # TUNED: was 0.20 (< inscribed 0.43 m)
       # 2D ObstacleLayer (parity with global_costmap). The old VoxelLayer discarded
       # every scan point: the merged /scan plane sits at z = -0.063 m in the odom
       # frame (lidar is ~0.063 m below base_link, and odom is coincident with
