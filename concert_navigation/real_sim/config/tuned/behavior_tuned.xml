@@ -1,3 +1,10 @@
+<!-- =========================================================================
+     TUNED behavior tree (copy of behavior.xml)  —  see NAV2_TUNING.md §7.
+     CHANGE vs original: BackUp recovery 0.15 m @ 0.025 m/s  ->  0.30 m @ 0.10 m/s
+       (the original was ~6 s to move 15 cm — negligible for a 1.37 m robot).
+     SmoothPath stays commented (smoother server disabled, §6). Structure is
+     otherwise identical. The original behavior.xml is untouched.
+     ========================================================================= -->
 <root BTCPP_format="4" main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
@@ -7,9 +14,9 @@
             <Sequence name="ComputeAndSmoothPath">
               <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"
                 error_code_id="{compute_path_error_code}"/>
-              <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"
+              <!-- <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"
                 smoother_id="simple_smoother" max_smoothing_duration="1.0"
-                check_for_collisions="false" error_code_id="{smoother_error_code}"/>
+                check_for_collisions="false" error_code_id="{smoother_error_code}"/> -->
             </Sequence>
             <ReactiveFallback name="ComputePathToPoseRecoveryFallback">
               <GoalUpdated/>
@@ -18,7 +25,7 @@
           </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{smoothed_path}" controller_id="FollowPath" goal_checker_id="general_goal_checker"
+          <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="general_goal_checker"
             error_code_id="{follow_path_error_code}"/>
           <ReactiveFallback name="FollowPathRecoveryFallback">
             <GoalUpdated/>
@@ -34,9 +41,8 @@
             <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
           </Sequence>
           <Spin spin_dist="1.57"/>
-          <Wait wait_duration="3"/>
+          <Wait wait_duration="5"/>
           <BackUp backup_dist="0.30" backup_speed="0.10"/>
-          <Spin spin_dist="-1.57"/>
         </RoundRobin>
       </ReactiveFallback>
     </RecoveryNode>

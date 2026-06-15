@@ -9,6 +9,9 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
@@ -17,6 +20,7 @@
   <exec_depend>nav2_controller</exec_depend>
   <exec_depend>nav2_planner</exec_depend>
   <exec_depend>nav2_smac_planner</exec_depend>
+  <exec_depend>nav2_theta_star_planner</exec_depend>
   <exec_depend>nav2_mppi_controller</exec_depend>
   <exec_depend>nav2_behaviors</exec_depend>
   <exec_depend>nav2_bt_navigator</exec_depend>
@@ -38,5 +42,6 @@
 
   <export>
     <build_type>ament_cmake</build_type>
+    <nav2_mppi_controller plugin="${prefix}/concert_mppi_critics.xml" />
   </export>
 </package>

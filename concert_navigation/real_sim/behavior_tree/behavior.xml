@@ -7,9 +7,9 @@
             <Sequence name="ComputeAndSmoothPath">
               <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"
                 error_code_id="{compute_path_error_code}"/>
-              <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"
+              <!-- <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"
                 smoother_id="simple_smoother" max_smoothing_duration="1.0"
-                check_for_collisions="false" error_code_id="{smoother_error_code}"/>
+                check_for_collisions="false" error_code_id="{smoother_error_code}"/> -->
             </Sequence>
             <ReactiveFallback name="ComputePathToPoseRecoveryFallback">
               <GoalUpdated/>
@@ -18,7 +18,7 @@
           </RecoveryNode>
         </RateController>
         <RecoveryNode number_of_retries="1" name="FollowPath">
-          <FollowPath path="{smoothed_path}" controller_id="FollowPath" goal_checker_id="general_goal_checker"
+          <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="general_goal_checker"
             error_code_id="{follow_path_error_code}"/>
           <ReactiveFallback name="FollowPathRecoveryFallback">
             <GoalUpdated/>
@@ -34,9 +34,8 @@
             <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
           </Sequence>
           <Spin spin_dist="1.57"/>
-          <Wait wait_duration="3"/>
-          <BackUp backup_dist="0.30" backup_speed="0.10"/>
-          <Spin spin_dist="-1.57"/>
+          <Wait wait_duration="5"/>
+          <BackUp backup_dist="0.15" backup_speed="0.025"/>
         </RoundRobin>
       </ReactiveFallback>
     </RecoveryNode>

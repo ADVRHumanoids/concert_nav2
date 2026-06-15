@@ -4,8 +4,8 @@ velocity_smoother:
     scale_velocities: False
     enable_stamped_cmd_vel: false
     feedback: "OPEN_LOOP"              # safer default; switch to CLOSED_LOOP once odom validated
-    max_velocity: [0.5, 0.5, 1.9]
-    min_velocity: [-0.5, -0.5, -1.9]
+    max_velocity: [0.8, 0.5, 1.9]
+    min_velocity: [-0.35, -0.5, -1.9]
     max_accel: [2.5, 2.5, 3.2]
     max_decel: [-2.5, -2.5, -3.2]
     odom_topic: "/base_link/odom"

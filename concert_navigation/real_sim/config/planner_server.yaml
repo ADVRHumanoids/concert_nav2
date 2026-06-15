@@ -9,12 +9,12 @@ planner_server:
       tolerance: 0.25                    # match goal xy tolerance; avoid ending paths 0.5 m from goal
       downsample_costmap: false
       downsampling_factor: 1
-      allow_unknown: true                # plan through unknown space (needed for SLAM concurrent nav)
+      allow_unknown: false              # safer for saved-map real-robot navigation
       max_iterations: 1000000
       max_on_approach_iterations: 1000
-      max_planning_time: 2.0             # seconds budget per plan
-      cost_travel_multiplier: 2.0        # bias away from high-cost cells (inflation gradient aware)
-      use_final_approach_orientation: false  # goal_checker handles final yaw
+      max_planning_time: 2.0
+      cost_travel_multiplier: 2.0
+      use_final_approach_orientation: false
       smoother:
         max_iterations: 1000
         w_smooth: 0.3

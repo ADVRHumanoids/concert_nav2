@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="concert_mppi_critics">
+    <class type="mppi::critics::LateralMotionCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>MPPI critic that softly penalizes sustained lateral body-frame motion.</description>
+    </class>
+  </library>
+</class_libraries>

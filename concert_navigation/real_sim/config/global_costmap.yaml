@@ -5,6 +5,8 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_link_projected
+      # Use the real robot footprint in simulation so clearance and collision
+      # checks match the robot we will deploy on.
       footprint: "[ [-0.685, -0.4], [-0.685, 0.4], [0.685, 0.4], [0.685, -0.4] ]"
       footprint_padding: 0.03
       resolution: 0.05
@@ -13,11 +15,17 @@ global_costmap:
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
+        # LAYER-level marking gate (separate from the per-source one under scan:).
+        # Default 0.0 rejects the z=-0.063 scan plane in the marking loop; must be
+        # negative or the costmap buffers the scan but never marks it (no error).
         min_obstacle_height: -0.3
         max_obstacle_height: 2.0
         observation_sources: scan
         scan:
           topic: /scan
+          # Same fix as local_costmap: the /scan plane is ~0.06 m below the costmap
+          # origin and the height filter runs in the global frame, so without a
+          # negative min_obstacle_height this layer is blind to all of /scan.
           min_obstacle_height: -0.3
           max_obstacle_height: 2.0
           clearing: True

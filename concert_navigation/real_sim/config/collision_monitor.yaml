@@ -2,6 +2,7 @@ collision_monitor:
   ros__parameters:
     base_frame_id: "base_link_projected"
     odom_frame_id: "odom"
+    # Sim command chain: controller -> velocity_smoother -> collision_monitor -> base.
     cmd_vel_in_topic: "cmd_vel_smoothed"
     cmd_vel_out_topic: "omnisteering/cmd_vel"
     enable_stamped_cmd_vel: false
@@ -25,7 +26,7 @@ collision_monitor:
       points: "[[0.95, 0.65], [0.95, -0.65], [-0.95, -0.65], [-0.95, 0.65]]"
       action_type: "slowdown"
       min_points: 4
-      slowdown_ratio: 0.4              # 40% speed when obstacle in slow zone
+      slowdown_ratio: 0.4
       visualize: True
       polygon_pub_topic: "polygon_slow"
       enabled: True
@@ -42,4 +43,6 @@ collision_monitor:
     scan:
       type: "scan"
       topic: "/scan"
+      min_height: 0.15
+      max_height: 2.0
       enabled: True

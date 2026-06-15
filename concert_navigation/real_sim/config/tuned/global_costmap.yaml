@@ -1,3 +1,8 @@
+# =============================================================================
+# TUNED COPY for simulation.
+# The controller/planner behavior is from the tuned real profile. Keep the tuned
+# real footprint here too, so simulation validates the same clearance envelope.
+# =============================================================================
 global_costmap:
   global_costmap:
     ros__parameters:
@@ -5,7 +10,7 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_link_projected
-      footprint: "[ [-0.685, -0.4], [-0.685, 0.4], [0.685, 0.4], [0.685, -0.4] ]"
+      footprint: "[ [-0.625, -0.4], [-0.625, 0.4], [0.625, 0.4], [0.625, -0.4] ]"
       footprint_padding: 0.03
       resolution: 0.05
       track_unknown_space: true
@@ -13,11 +18,17 @@ global_costmap:
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
+        # LAYER-level marking gate (separate from the per-source one under scan:).
+        # Default 0.0 rejects the z=-0.063 scan plane in the marking loop; must be
+        # negative or the costmap buffers the scan but never marks it (no error).
         min_obstacle_height: -0.3
         max_obstacle_height: 2.0
         observation_sources: scan
         scan:
           topic: /scan
+          # Same fix as local_costmap: the /scan plane is ~0.06 m below the costmap
+          # origin and the height filter runs in the global frame, so without a
+          # negative min_obstacle_height this layer is blind to all of /scan.
           min_obstacle_height: -0.3
           max_obstacle_height: 2.0
           clearing: True
@@ -33,5 +44,5 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 7.0
-        inflation_radius: 0.85
+        inflation_radius: 0.80
       always_send_full_costmap: True

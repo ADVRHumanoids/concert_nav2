@@ -1,8 +1,21 @@
+# =============================================================================
+# TUNED COPY of collision_monitor.yaml  —  see NAV2_TUNING.md §3 (P0-2) & §9.
+# CHANGES vs original:
+#   cmd_vel_in_topic "cmd_vel_nav" -> "cmd_vel_smoothed"
+#       The velocity_smoother publishes cmd_vel_smoothed; the original read the
+#       RAW controller output (cmd_vel_nav), so the smoother was bypassed. This
+#       restores the chain controller -> velocity_smoother -> collision_monitor
+#       -> /omnisteering/cmd_vel documented in README.md.
+#   Removed the scan source min_height/max_height lines (A11): the "scan"
+#       observation type has no height filtering (only "pointcloud" does), so
+#       those lines were dead config.
+# Everything else is identical to the original. Original file is untouched.
+# =============================================================================
 collision_monitor:
   ros__parameters:
     base_frame_id: "base_link_projected"
     odom_frame_id: "odom"
-    cmd_vel_in_topic: "cmd_vel_smoothed"
+    cmd_vel_in_topic: "cmd_vel_smoothed"     # TUNED: was "cmd_vel_nav" (smoother was bypassed)
     cmd_vel_out_topic: "omnisteering/cmd_vel"
     enable_stamped_cmd_vel: false
     state_topic: "collision_monitor_state"
@@ -25,7 +38,7 @@ collision_monitor:
       points: "[[0.95, 0.65], [0.95, -0.65], [-0.95, -0.65], [-0.95, 0.65]]"
       action_type: "slowdown"
       min_points: 4
-      slowdown_ratio: 0.4              # 40% speed when obstacle in slow zone
+      slowdown_ratio: 0.4
       visualize: True
       polygon_pub_topic: "polygon_slow"
       enabled: True

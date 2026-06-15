@@ -5,24 +5,20 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
     use_sim_time_env = EnvironmentVariable(name='USE_SIM_TIME', default_value='true')
-
-    # 2) Use this environment variable as the default for the 'use_sim_time' LaunchConfiguration
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
         default_value=use_sim_time_env,
         description='Use simulation time'
     )
-
-    # 3) Create a LaunchConfiguration object to reference 'use_sim_time' in our Node parameters
     use_sim_time = LaunchConfiguration('use_sim_time')
 
-    # Paths to the configuration files
     package_dir = get_package_share_directory('concert_navigation')
     controller_yaml = os.path.join(package_dir, 'config', 'controller.yaml')
     bt_navigator_yaml = os.path.join(package_dir, 'config', 'bt_navigator.yaml')
-    planner_yaml = os.path.join(package_dir, 'config', 'planner_server.yaml')
+    planner_yaml = os.path.join(package_dir, 'config', 'planner_server_theta.yaml')
     recovery_yaml = os.path.join(package_dir, 'config', 'recovery.yaml')
     smoother_server_yaml = os.path.join(package_dir, 'config', 'smoother_server.yaml')
     global_costmap_yaml = os.path.join(package_dir, 'config', 'global_costmap.yaml')
@@ -31,21 +27,14 @@ def generate_launch_description():
     collision_monitor_yaml = os.path.join(package_dir, 'config', 'collision_monitor.yaml')
     behavior_tree_path = os.path.join(package_dir, 'behavior_tree', 'behavior.xml')
 
-    # Define remappings for tf topics
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
-    # Nodes definitions with parameter overrides to respect the "use_sim_time" LaunchConfiguration
     controller_node = Node(
         package='nav2_controller',
         executable='controller_server',
         name='controller_server',
         output='screen',
-        # The order below matters: later dictionary entries override previous ones
-        parameters=[
-            controller_yaml,             # Original YAML
-            {'use_sim_time': use_sim_time},  # Override with launch argument
-            local_costmap_yaml
-        ],
+        parameters=[controller_yaml, {'use_sim_time': use_sim_time}, local_costmap_yaml],
         remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]
     )
 
@@ -54,11 +43,7 @@ def generate_launch_description():
         executable='planner_server',
         name='planner_server',
         output='screen',
-        parameters=[
-            planner_yaml,
-            {'use_sim_time': use_sim_time},
-            global_costmap_yaml
-        ],
+        parameters=[planner_yaml, {'use_sim_time': use_sim_time}, global_costmap_yaml],
         remappings=remappings
     )
 
@@ -67,10 +52,7 @@ def generate_launch_description():
         executable='behavior_server',
         name='recoveries_server',
         output='screen',
-        parameters=[
-            recovery_yaml,
-            {'use_sim_time': use_sim_time}
-        ],
+        parameters=[recovery_yaml, {'use_sim_time': use_sim_time}],
         remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]
     )
 
@@ -81,10 +63,8 @@ def generate_launch_description():
         output='screen',
         parameters=[
             bt_navigator_yaml,
-            {'use_sim_time': use_sim_time},  # override
-            {
-                'default_nav_to_pose_bt_xml': behavior_tree_path,
-            },
+            {'use_sim_time': use_sim_time},
+            {'default_nav_to_pose_bt_xml': behavior_tree_path},
         ],
         remappings=remappings
     )
@@ -94,10 +74,7 @@ def generate_launch_description():
         executable='velocity_smoother',
         name='velocity_smoother',
         output='screen',
-        parameters=[
-            velocity_smoother_yaml,
-            {'use_sim_time': use_sim_time}
-        ],
+        parameters=[velocity_smoother_yaml, {'use_sim_time': use_sim_time}],
         remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]
     )
 
@@ -106,10 +83,7 @@ def generate_launch_description():
         executable='collision_monitor',
         name='collision_monitor',
         output='screen',
-        parameters=[
-            collision_monitor_yaml,
-            {'use_sim_time': use_sim_time}
-        ],
+        parameters=[collision_monitor_yaml, {'use_sim_time': use_sim_time}],
         remappings=remappings
     )
 
@@ -118,10 +92,7 @@ def generate_launch_description():
         executable='smoother_server',
         name='smoother_server',
         output='screen',
-        parameters=[
-            smoother_server_yaml,
-            {'use_sim_time': use_sim_time}
-        ],
+        parameters=[smoother_server_yaml, {'use_sim_time': use_sim_time}],
         remappings=remappings
     )
 
@@ -145,7 +116,6 @@ def generate_launch_description():
         ]
     )
 
-    # 4) Return a LaunchDescription including the newly-declared argument and the nodes
     return LaunchDescription([
         use_sim_time_arg,
         controller_node,
