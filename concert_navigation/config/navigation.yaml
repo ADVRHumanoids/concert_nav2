@@ -1,0 +1,394 @@
+behavior_server:
+  ros__parameters:
+    local_costmap_topic: local_costmap/costmap_raw
+    local_footprint_topic: local_costmap/published_footprint
+    global_costmap_topic: global_costmap/costmap_raw
+    global_footprint_topic: global_costmap/published_footprint
+    cycle_frequency: 10.0
+    behavior_plugins:
+      ["spin", "backup", "drive_on_heading", "wait", "assisted_teleop"]
+    spin:
+      plugin: "nav2_behaviors/Spin"
+    backup:
+      plugin: "nav2_behaviors/BackUp"
+    drive_on_heading:
+      plugin: "nav2_behaviors/DriveOnHeading"
+    wait:
+      plugin: "nav2_behaviors/Wait"
+    assisted_teleop:
+      plugin: "nav2_behaviors/AssistedTeleop"
+    local_frame: odom
+    global_frame: map
+    robot_base_frame: base_link
+    transform_timeout: 0.8
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 1.0
+    min_rotational_vel: 0.4
+    rotational_acc_lim: 3.2
+
+bt_navigator:
+  ros__parameters:
+    global_frame: map
+    robot_base_frame: base_link
+    odom_topic: /base_link/odom
+    transform_tolerance: 0.8
+    default_nav_to_pose_bt_xml: /home/user/data/forest_ws/install/share/concert_navigation/behavior_tree/NavigationMPPI.xml
+
+    bt_loop_duration: 10
+    default_server_timeout: 20
+    wait_for_service_timeout: 1000
+    action_server_result_timeout: 900.0
+    navigators: [navigate_to_pose, navigate_through_poses]
+    navigate_to_pose:
+      plugin: nav2_bt_navigator::NavigateToPoseNavigator
+    navigate_through_poses:
+      plugin: nav2_bt_navigator::NavigateThroughPosesNavigator
+    error_code_names:
+      - compute_path_error_code
+      - follow_path_error_code
+      - smoother_error_code
+
+
+
+controller_server:
+  ros__parameters:
+
+    controller_frequency: 10.0
+    min_x_velocity_threshold: 0.03
+    min_y_velocity_threshold: 0.03
+    min_theta_velocity_threshold: 0.1
+    failure_tolerance: 2.0 # seconds of patience before throwing an error
+    footprint: "[ [-0.685, -0.4], [-0.685, 0.4], [0.685, 0.4], [0.685, -0.4] ]"
+
+    progress_checker_plugin: "progress_checker"
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5
+      movement_time_allowance: 10.0
+
+    goal_checker_plugin: "goal_checker"
+    goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.1
+      yaw_goal_tolerance: 0.05
+      stateful: True
+
+    controller_plugins: ["FollowPath"]
+    FollowPath:
+      plugin: "nav2_mppi_controller::MPPIController"
+      time_steps: 56
+      model_dt: 0.1
+      batch_size: 2000
+      vx_std: 0.2
+      vy_std: 0.2
+      wz_std: 0.2
+      vx_max: 0.2
+      vx_min: -0.2
+      vy_max: 0.2
+      wz_max: 0.5
+      ax_max: 3.0
+      ax_min: -3.0
+      ay_max: 3.0
+      az_max: 3.5
+      iteration_count: 1
+      prune_distance: 0.5
+      transform_tolerance: 0.8
+      temperature: 0.3
+      gamma: 0.015
+      motion_model: "Omni"
+      visualize: false
+      regenerate_noises: false
+      TrajectoryVisualizer:
+        trajectory_step: 5
+        time_step: 3
+      AckermannConstraints:
+        min_turning_r: 0.2
+      critics: ["ConstraintCritic", "CostCritic", "GoalCritic",
+                "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic",
+                "PathAngleCritic", "PreferForwardCritic"]
+      ConstraintCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 4.0
+      GoalCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+        threshold_to_consider: 1.4
+      GoalAngleCritic:
+        enabled: true
+        cost_power: 5
+        cost_weight: 3.0
+        threshold_to_consider: 0.5
+      PreferForwardCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 10.0
+        threshold_to_consider: 0.5
+      # ObstaclesCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   repulsion_weight: 1.5
+      #   critical_weight: 20.0
+      #   consider_footprint: false
+      #   collision_cost: 10000.0
+      #   collision_margin_distance: 0.1
+      #   near_goal_distance: 0.5
+      #   inflation_radius: 0.55 # (only in Humble)
+      #   cost_scaling_factor: 10.0 # (only in Humble)
+      CostCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 3.81
+        critical_cost: 300.0
+        consider_footprint: true
+        collision_cost: 1000000.0
+        near_goal_distance: 1.0
+        trajectory_point_step: 2
+      PathAlignCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 14.0
+        max_path_occupancy_ratio: 0.05
+        trajectory_point_step: 4
+        threshold_to_consider: 0.5
+        offset_from_furthest: 20
+        use_path_orientations: false
+      PathFollowCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 5.0
+        offset_from_furthest: 5
+        threshold_to_consider: 1.4
+      PathAngleCritic:
+        enabled: true
+        cost_power: 1
+        cost_weight: 2.0
+        offset_from_furthest: 4
+        threshold_to_consider: 0.5
+        max_angle_to_furthest: 1.0
+        mode: 0
+      # VelocityDeadbandCritic:
+      #   enabled: true
+      #   cost_power: 1
+      #   cost_weight: 35.0
+      #   deadband_velocities: [0.05, 0.05, 0.05]
+      # TwirlingCritic:
+      #   enabled: true
+      #   twirling_cost_power: 1
+      #   twirling_cost_weight: 10.0    
+
+
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      update_frequency: 5.0
+      publish_frequency: 5.0
+      global_frame: map
+      robot_base_frame: base_link
+      rolling_window: true
+      resolution: 0.05
+      always_send_full_costmap: false
+
+      footprint: "[ [-0.685, -0.4], [-0.685, 0.4], [0.685, 0.4], [0.685, -0.4] ]"
+      footprint_padding: 0.1
+      plugins: ["stvl_layer", "inflation_layer"]
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        enabled: True
+        inflation_radius: 0.2
+        cost_scaling_factor: 3.0
+      stvl_layer:
+        plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
+        enabled: true
+        voxel_decay: 2.0     #seconds if linear, e^n if exponential
+        decay_model: 0      #0=linear, 1=exponential, -1=persistent
+        voxel_size: 0.05  # meters
+        track_unknown_space: true
+        unknown_threshold: 15
+        mark_threshold: 0
+        update_footprint_enabled: true
+        combination_method: 1
+        origin_z: 0.0
+        publish_voxel_map: true
+        transform_tolerance: 0.8
+        mapping_mode: false
+        map_save_duration: 60.0
+        observation_sources: pointcloud
+        pointcloud:
+          data_type: PointCloud2
+          topic: /merged_cloud
+          marking: true
+          clearing: true
+          obstacle_range: 1.5 # meters
+          min_obstacle_height: 0.05 # meters
+          max_obstacle_height: 2.0  # meters
+          expected_update_rate: 0.0
+          observation_persistence: 2.0
+          inf_is_valid: false
+          filter: "voxel"
+          voxel_min_points: 0
+          clear_after_reading: true
+          max_z: 1.5 # [meters] Since layer size is 5x5m and centered at the robot
+          min_z: 0.0 # [meters]
+          vertical_fov_angle: 1.0123  # radians
+          horizontal_fov_angle: 1.5184 # radians
+          decay_acceleration: 5.0  # 1/s^2
+          model_type: 0 #default 0 (depth camera).
+
+
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+
+      update_frequency: 5.0
+      publish_frequency: 5.0
+      global_frame: map
+      robot_base_frame: base_link
+
+      resolution: 0.05
+      always_send_full_costmap: True
+      track_unknown_space: True
+
+      # robot_radius: 0.2
+      footprint: "[ [-0.685, -0.4], [-0.685, 0.4], [0.685, 0.4], [0.685, -0.4] ]"
+      footprint_padding: 0.2
+
+      plugins: ["static_layer", "stvl_layer", "inflation_layer"]
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        enabled: True
+        inflation_radius: 0.2
+        cost_scaling_factor: 3.0
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        enabled: True
+        map_subscribe_transient_local: True
+      stvl_layer:
+        plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
+        enabled: true
+        voxel_decay: 2.0     #seconds if linear, e^n if exponential
+        decay_model: 0      #0=linear, 1=exponential, -1=persistent
+        voxel_size: 0.05  # meters
+        track_unknown_space: true
+        unknown_threshold: 15
+        mark_threshold: 0
+        update_footprint_enabled: true
+        combination_method: 1
+        origin_z: 0.0
+        publish_voxel_map: true
+        transform_tolerance: 0.8
+        mapping_mode: false
+        map_save_duration: 60.0
+        observation_sources: pointcloud
+        pointcloud:
+          data_type: PointCloud2
+          topic: /merged_cloud
+          marking: true
+          clearing: true
+          obstacle_range: 1.5 # meters
+          min_obstacle_height: 0.05 # meters
+          max_obstacle_height: 2.0  # meters
+          expected_update_rate: 0.0
+          observation_persistence: 0.0
+          inf_is_valid: false
+          filter: "voxel"
+          voxel_min_points: 0
+          clear_after_reading: true
+          max_z: 1.5 # [meters] Since layer size is 5x5m and centered at the robot
+          min_z: 0.0 # [meters]
+          vertical_fov_angle: 1.0123  # radians
+          horizontal_fov_angle: 1.5184 # radians
+          decay_acceleration: 15.0  # 1/s^2
+          model_type: 0 #default 0 (depth camera).
+
+
+map_server:
+  ros__parameters:
+    yaml_filename: /home/user/data/forest_ws/maps/nav_map/nav2.yaml
+
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 1.0
+
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_smac_planner::SmacPlanner2D" # In Iron and older versions, "/" was used instead of "::"
+      tolerance: 0.8                      # tolerance for planning if unable to reach exact pose, in meters
+      downsample_costmap: false             # whether or not to downsample the map
+      downsampling_factor: 1                # multiplier for the resolution of the costmap layer (e.g. 2 on a 5cm costmap would be 10cm)
+      allow_unknown: true                   # allow traveling in unknown space
+      max_iterations: 1000000               # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
+      max_on_approach_iterations: 1000      # maximum number of iterations to attempt to reach goal once in tolerance
+      max_planning_time: 2.0                # max time in s for planner to plan, smooth
+      cost_travel_multiplier: 2.3          # Cost multiplier to apply to search to steer away from high cost areas. Larger values will place in the center of aisles more exactly (if non-`FREE` cost potential field exists) but take slightly longer to compute. To optimize for speed, a value of 1.0 is reasonable. A reasonable tradeoff value is 2.0. A value of 0.0 effective disables steering away from obstacles and acts like a naive binary search A*.
+      use_final_approach_orientation: false # Whether to set the final path pose at the goal's orientation to the requested orientation (false) or in line with the approach angle so the robot doesn't rotate to heading (true)
+      smoother:
+        max_iterations: 1000
+        w_smooth: 0.3
+        w_data: 0.2
+        tolerance: 1.0e-10
+
+velocity_smoother:
+  ros__parameters:
+
+    smoothing_frequency: 10.0
+    scale_velocities: False
+    feedback: "CLOSED_LOOP"
+    max_velocity: [0.4, 0.0, 1.5]
+    min_velocity: [-0.1, -0.1, -0.1]
+    max_accel: [1.0, 0.0, 3.0]
+    max_decel: [-1.0, 0.0, -3.0]
+    # used in the CLOSED_LOOP feedback mode
+    odom_topic: "/base_link/odom"
+    odom_duration: 0.1
+    deadband_velocity: [-0.1, -0.1, -0.1]
+    velocity_timeout: 1.0
+
+# collision_monitor:
+#   ros__parameters:
+#     base_frame_id: "base_link"
+#     odom_frame_id: "odom"
+#     cmd_vel_in_topic: "cmd_vel_smoothed"
+#     cmd_vel_out_topic: "omnisteering/cmd_vel"
+#     enable_stamped_cmd_vel: false
+#     state_topic: "collision_monitor_state"
+#     transform_tolerance: 0.2
+#     source_timeout: 1.0
+#     base_shift_correction: True
+#     stop_pub_timeout: 2.0
+#     polygons: ["PolygonStop", "PolygonSlow", "FootprintApproach"]
+#     PolygonStop:
+#       type: "polygon"
+#       points: "[[0.75, 0.50], [0.75, -0.50], [-0.75, -0.50], [-0.75, 0.50]]"
+#       action_type: "stop"
+#       min_points: 4
+#       visualize: True
+#       polygon_pub_topic: "polygon_stop"
+#       enabled: True
+#     PolygonSlow:
+#       type: "polygon"
+#       points: "[[0.95, 0.65], [0.95, -0.65], [-0.95, -0.65], [-0.95, 0.65]]"
+#       action_type: "slowdown"
+#       min_points: 4
+#       slowdown_ratio: 0.4
+#       visualize: True
+#       polygon_pub_topic: "polygon_slow"
+#       enabled: True
+#     FootprintApproach:
+#       type: "polygon"
+#       action_type: "approach"
+#       footprint_topic: "/local_costmap/published_footprint"
+#       time_before_collision: 1.2
+#       simulation_time_step: 0.1
+#       min_points: 6
+#       visualize: False
+#       enabled: True
+#     observation_sources: ["scan"]
+#     scan:
+#       type: "scan"
+#       topic: "/scan"
+#       min_height: 0.15
+#       max_height: 2.0
+#       enabled: True
