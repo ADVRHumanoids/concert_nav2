@@ -1,76 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<root BTCPP_format="4"
-      main_tree_to_execute="MainTree">
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
   <BehaviorTree ID="MainTree">
-    <Inverter>
-      <KeepRunningUntilFailure>
-        <Inverter>
-          <PipelineSequence>
-            <RateController hz="0.3">
-              <GoalUpdater input_goal="{goal}"
-                           output_goal="{goal}">
-                <Sequence name="ComputePath">
-                  <ComputePathToPose goal="{goal}"
-                                     planner_id="GridBased"
-                                     path="{path}"/>
-                  <IsPathValid path="{path}"/>
-                </Sequence>
-              </GoalUpdater>
-            </RateController>
-            <Fallback name="FollowPath">
-              <FollowPath controller_id="FollowPath"
-                          path="{path}"
-                          goal_checker_id="goal_checker"/>
-              <ForceFailure>
-                <Wait wait_duration="1.0"/>
-              </ForceFailure>
-            </Fallback>
-          </PipelineSequence>
-        </Inverter>
-      </KeepRunningUntilFailure>
-    </Inverter>
+    <PipelineSequence name="NavigateWithReplanning">
+      <DistanceController distance="1.0">
+        <ComputePathToPose goal="{goal}" path="{path}"/>
+      </DistanceController>
+      <FollowPath path="{path}"/>
+    </PipelineSequence>
   </BehaviorTree>
-
-  <!-- Description of Node Models (used by Groot) -->
-  <TreeNodesModel>
-    <Action ID="ComputePathToPose">
-      <input_port name="goal">Destination to plan to</input_port>
-      <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
-      <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <output_port name="path">Path created by ComputePathToPose node</output_port>
-    </Action>
-    <Action ID="FollowPath">
-      <input_port name="controller_id"
-                  default="FollowPath"/>
-      <input_port name="path">Path to follow</input_port>
-      <input_port name="goal_checker_id">Goal checker</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-    </Action>
-    <Decorator ID="GoalUpdater">
-      <input_port name="input_goal">Original goal in</input_port>
-      <output_port name="output_goal">Output goal set by subscription</output_port>
-    </Decorator>
-    <Condition ID="IsPathValid">
-      <input_port name="path"> Path to validate </input_port>
-      <input_port name="server_timeout"> Server timeout </input_port>
-    </Condition>
-    <Control ID="PipelineSequence"/>
-    <Decorator ID="RateController">
-      <input_port name="hz">Rate</input_port>
-    </Decorator>
-    <Action ID="TruncatePath">
-      <input_port name="distance">Distance before goal to truncate</input_port>
-      <input_port name="input_path">Path to truncate</input_port>
-      <output_port name="output_path">Truncated path to utilize</output_port>
-    </Action>
-    <Action ID="Wait">
-      <input_port name="wait_duration">Wait time</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-    </Action>
-  </TreeNodesModel>
-
 </root>

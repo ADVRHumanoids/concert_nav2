@@ -21,10 +21,13 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     # Paths to the configuration files
-    package_dir = get_package_share_directory('concert_navigation')
+    package_dir = get_package_share_directory('demo_nav2_lab')
     config_yaml = os.path.join(package_dir, 'config', 'navigation.yaml')
 
-    # Define remappings for tf topics
+    # Map fully qualified names to relative ones so the node's namespace can be prepended.
+    # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
+    # https://github.com/ros/geometry2/issues/32
+    # https://github.com/ros/robot_state_publisher/pull/30
     remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
 
     # Nodes definitions with parameter overrides to respect the "use_sim_time" LaunchConfiguration
@@ -38,7 +41,7 @@ def generate_launch_description():
             config_yaml,             # Original YAML
             {'use_sim_time': use_sim_time},  # Override with launch argument
         ],
-        remappings=remappings + [('cmd_vel', '/omnisteering/cmd_vel')]
+        remappings=remappings + [('cmd_vel', 'cmd_vel_nav')],
     )
 
     planner_node = Node(
@@ -50,7 +53,7 @@ def generate_launch_description():
             config_yaml,
             {'use_sim_time': use_sim_time},
         ],
-        # remappings=remappings
+        remappings=remappings
     )
 
     recoveries_node = Node(
@@ -74,7 +77,7 @@ def generate_launch_description():
             config_yaml,
             {'use_sim_time': use_sim_time},  # override
         ],
-        # remappings=remappings
+        remappings=remappings
     )
 
     velocity_smoother_node = Node(
@@ -86,7 +89,8 @@ def generate_launch_description():
             config_yaml,
             {'use_sim_time': use_sim_time}
         ],
-        # remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]
+        remappings=remappings + [('cmd_vel', 'cmd_vel_nav'),
+                                 ('/cmd_vel_smoothed', '/omnisteering/cmd_vel')]
     )
 
     collision_monitor_node = Node(
@@ -98,7 +102,7 @@ def generate_launch_description():
             config_yaml,
             {'use_sim_time': use_sim_time}
         ],
-        # remappings=remappings
+        remappings=remappings
     )
 
     smoother_node = Node(
@@ -110,7 +114,7 @@ def generate_launch_description():
             config_yaml,
             {'use_sim_time': use_sim_time}
         ],
-        # remappings=remappings
+        remappings=remappings
     )
 
     lifecycle_manager_node = Node(
@@ -125,11 +129,11 @@ def generate_launch_description():
                 'planner_server',
                 'map_server',
                 'controller_server',
-                'recoveries_server',
+                # 'recoveries_server',
                 'bt_navigator',
                 'velocity_smoother',
                 # 'collision_monitor',
-                'smoother_server'
+                # 'smoother_server'
             ]}
         ],
         # arguments=['--ros-args', '--log-level', 'debug']
@@ -141,7 +145,7 @@ def generate_launch_description():
     name='map_server',
     output='screen',
     parameters=[
-        config_yaml,
+        {'yaml_filename': LaunchConfiguration('map_file')},
         {'use_sim_time': use_sim_time},
     ],
 )
@@ -152,10 +156,10 @@ def generate_launch_description():
         controller_node,
         planner_node,
         map_server_node,
-        recoveries_node,
+        # recoveries_node,
         bt_navigator_node,
         velocity_smoother_node,
         # collision_monitor_node,
-        smoother_node,
+        # smoother_node,
         lifecycle_manager_node
     ])
