@@ -21,14 +21,14 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
 
     # Paths to the configuration files
-    package_dir = get_package_share_directory('demo_nav2_lab')
+    package_dir = get_package_share_directory('concert_navigation')
     config_yaml = os.path.join(package_dir, 'config', 'navigation.yaml')
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
     # https://github.com/ros/geometry2/issues/32
     # https://github.com/ros/robot_state_publisher/pull/30
-    remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static')]
+    remappings = [('/tf', 'tf'), ('/tf_static', 'tf_static'), ('/odom', '/base_link/odom')]
 
     # Nodes definitions with parameter overrides to respect the "use_sim_time" LaunchConfiguration
     controller_node = Node(

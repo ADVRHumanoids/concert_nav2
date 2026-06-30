@@ -210,8 +210,10 @@ controller_server:
 local_costmap:
   local_costmap:
     ros__parameters:
-      update_frequency: 2.0
-      publish_frequency: 2.0
+      height: 8
+      width: 8
+      update_frequency: 20.0
+      publish_frequency: 20.0
       global_frame: map
       robot_base_frame: base_link
       rolling_window: true
@@ -220,11 +222,11 @@ local_costmap:
 
       footprint: "[[0.55, 0.35], [0.55, -0.35], [-0.55, -0.35], [-0.55, 0.35]]"
       footprint_padding: 0.03
-      plugins: ["stvl_layer", "inflation_layer"]
+      plugins: ["stvl_layer", "obstacle_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         enabled: True
-        inflation_radius: 0.7
+        inflation_radius: 0.3
         cost_scaling_factor: 10.0
       stvl_layer:
         plugin: "spatio_temporal_voxel_layer/SpatioTemporalVoxelLayer"
@@ -249,7 +251,7 @@ local_costmap:
           marking: true
           clearing: true
           obstacle_range: 1.5 # meters
-          min_obstacle_height: 0.05 # meters
+          min_obstacle_height: -0.6 # meters
           max_obstacle_height: 2.0  # meters
           expected_update_rate: 0.0
           observation_persistence: 2.0
@@ -258,11 +260,30 @@ local_costmap:
           voxel_min_points: 0
           clear_after_reading: true
           max_z: 1.5 # [meters] Since layer size is 5x5m and centered at the robot
-          min_z: 0.0 # [meters]
+          min_z: -0.6 # [meters]
           vertical_fov_angle: 1.0123  # radians
-          horizontal_fov_angle: 1.5184 # radians
+          horizontal_fov_angle: 6.2832 # radians
           decay_acceleration: 5.0  # 1/s^2
           model_type: 0 #default 0 (depth camera).
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: scan
+        footprint_clearing_enabled: true
+        max_obstacle_height: 2.0
+        combination_method: 1
+        scan:
+          topic: /scan
+          obstacle_max_range: 5.0
+          obstacle_min_range: 0.9
+          raytrace_max_range: 5.0
+          raytrace_min_range: 0.9
+          max_obstacle_height: 2.0
+          min_obstacle_height: -0.6
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          inf_is_valid: false
 
 
 
@@ -375,8 +396,8 @@ velocity_smoother:
     smoothing_frequency: 20.0  # Rate to run smoother
     scale_velocities: false  # scale velocities proportionally if any axis is outside of acceleration range to follow same vector, if possible
     feedback: "OPEN_LOOP"  # Type of feedback for current speed. Open loop uses the last smoothed output. Closed loop uses robot odometry
-    max_velocity: [0.5, 0.5, 0.8]  # Maximum velocities, ordered [Vx, Vy, Vw]
-    min_velocity: [-0.5, -0.5, -0.8]  # Minimum velocities, ordered [Vx, Vy, Vw]
+    max_velocity: [0.2, 0.2, 0.4]  # Maximum velocities, ordered [Vx, Vy, Vw]
+    min_velocity: [-0.2, -0.2, -0.4]  # Minimum velocities, ordered [Vx, Vy, Vw]
     deadband_velocity: [0.04, 0.04, 0.1]  # A deadband of velocities below which they should be zero-ed out for sending to the robot base controller, ordered [Vx, Vy, Vw]
     velocity_timeout: 1.0  # Time (s) after which if no new velocity commands are received to zero out and stop
     max_accel: [2.5, 2.5, 3.2]  # Maximum acceleration, ordered [Ax, Ay, Aw]
