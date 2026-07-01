@@ -7,9 +7,39 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(nav2_mppi_controller REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(rclcpp REQUIRED)
+
+add_library(concert_mppi_critics SHARED
+  src/lateral_motion_critic.cpp
+)
+target_include_directories(concert_mppi_critics PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+target_compile_features(concert_mppi_critics PUBLIC cxx_std_23)
+ament_target_dependencies(concert_mppi_critics
+  nav2_mppi_controller
+  pluginlib
+  rclcpp
+)
+pluginlib_export_plugin_description_file(nav2_mppi_controller concert_mppi_critics.xml)
+
+install(TARGETS concert_mppi_critics
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
 install(DIRECTORY launch config behavior_tree
   DESTINATION share/${PROJECT_NAME}
 )
+
+ament_export_include_directories(include)
+ament_export_libraries(concert_mppi_critics)
+ament_export_dependencies(nav2_mppi_controller pluginlib rclcpp)
 
 
 if(BUILD_TESTING)
