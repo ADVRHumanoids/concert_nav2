@@ -17,6 +17,12 @@ def generate_launch_description():
         description='Use simulation time (true for simulation, false for real hardware)'
     )
 
+    autostart_arg = DeclareLaunchArgument(
+        'autostart',
+        default_value='true',
+        description='Automatically startup the nav2 stack'
+    )
+
     # 3) Create a LaunchConfiguration object to reference 'use_sim_time' in our Node parameters
     use_sim_time = LaunchConfiguration('use_sim_time')
 
@@ -123,7 +129,7 @@ def generate_launch_description():
         name='lifecycle_manager_navigation',
         output='screen',
         parameters=[
-            {'autostart': True},
+            {'autostart': LaunchConfiguration('autostart')},
             {'use_sim_time': use_sim_time},
             {'node_names': [
                 'planner_server',
@@ -153,6 +159,7 @@ def generate_launch_description():
     # 4) Return a LaunchDescription including the newly-declared argument and the nodes
     return LaunchDescription([
         use_sim_time_arg,
+        autostart_arg,
         controller_node,
         planner_node,
         map_server_node,
