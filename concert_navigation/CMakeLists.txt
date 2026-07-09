@@ -7,9 +7,11 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(nav2_mppi_controller REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(navigation2 REQUIRED)
+find_package(nav2_mppi_controller REQUIRED)
+find_package(spatio_temporal_voxel_layer REQUIRED)
 
 add_library(concert_mppi_critics SHARED
   src/lateral_motion_critic.cpp
